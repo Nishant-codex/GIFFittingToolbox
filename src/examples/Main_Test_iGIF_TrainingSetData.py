@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/src')
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +7,7 @@ import copy
 
 import scipy
 from scipy import io
-import cPickle as pkl
+import pickle as pkl
 
 from Experiment import *
 
@@ -56,7 +56,7 @@ it on the same test set used here.
 experiment = Experiment('Fit to training set data', 0.1)
 
 
-PATH = '../../data/fi/'
+PATH = 'C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/data/gif_test/'
 
 # Load AEC data
 experiment.setAECTrace(PATH + 'Cell3_Ger1Elec_ch2_1007.ibw', 1.0, PATH + 'Cell3_Ger1Elec_ch3_1007.ibw', 1.0, 10000.0, FILETYPE='Igor')
@@ -207,7 +207,7 @@ for i in np.arange(len(models)) :
     # predict spike times in test set
     prediction = experiment.predictSpikes(model, nb_rep=500)
     
-    print "\n Model: ", labels[i]
+    print("\n Model: ", labels[i])
     
     # compute Md*
     
@@ -221,3 +221,5 @@ for i in np.arange(len(models)) :
 ###################################################################################################
 
 iGIF.compareModels([iGIF_NP_fit, iGIF_Na_fit], labels=['iGIF_NP', 'iGIF_Na'])
+
+

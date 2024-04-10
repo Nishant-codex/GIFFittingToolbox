@@ -62,7 +62,6 @@ class AEC_Badel(AEC) :
         # Compensate voltage traces in a given Experiment    
         self.compensateAllTraces(experiment)
         
-        
 
     def computeElectrodeFilter(self, expr) :
     
@@ -176,7 +175,7 @@ class AEC_Badel(AEC) :
         Traces are compensated according to Eq. 15 in Pozzorini et al. PLOS Comp. Biol. 2015
         """
         
-        print("\nCompensate experiment")
+        print("Compensate experiment")
         
         print("AEC trace...")
         self.deconvolveTrace(expr.AEC_trace)

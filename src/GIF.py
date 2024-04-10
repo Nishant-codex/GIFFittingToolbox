@@ -27,13 +27,13 @@ class GIF(ThresholdModel) :
     
     where the membrane potential dynamics is given by:
     
-    C dV/dt = -gl(V-El) + I - sum_j eta(t-\hat t_j)
+    C dV/dt = -gl(V-El) + I - sum_j eta(t-hat t_j)
     
     and the firing threshold V_T is given by:
     
-    V_T = Vt_star + sum_j gamma(t-\hat t_j)
+    V_T = Vt_star + sum_j gamma(t-hat t_j)
     
-    and \hat t_j denote the spike times.
+    and hat t_j denote the spike times.
     """
 
     def __init__(self, dt=0.1):
@@ -78,9 +78,9 @@ class GIF(ThresholdModel) :
         
         self.avg_spike_shape = 0
         self.avg_spike_shape_support = 0
-        
-    
-    
+
+        self.print_log=True
+
     def setDt(self, dt):
 
         """
@@ -189,14 +189,15 @@ class GIF(ThresholdModel) :
             V[0] = V0
 
             # 
-            for t in range(T_ind-1):
+            t = 0
+            while t<T_ind-1:
                 V[t+1] = V[t] + dt/C*( -gl*(V[t] - El) + I[t] - eta_sum[t] )
                 # COMPUTE PROBABILITY OF EMITTING ACTION POTENTIAL
                 lambda_val = lambda0*np.exp((V[t+1]-Vt_star-gamma_sum[t])/DV )
                 p_dontspike = np.exp(-lambda_val*(dt/1000.0)) #since lambda0 is in Hz, dt must also be in Hz (this is why dt/1000.0)
 
                 # PRODUCE SPIKE STOCHASTICALLY
-                r = np.random.rand()
+                r = np.random.random()
                 if r > p_dontspike:
                     if (t+1 < T_ind-1) :               
                         spks[t+1] = 1.0 
@@ -204,201 +205,109 @@ class GIF(ThresholdModel) :
                     t = t + T_ref_ind 
                     
                     if (t+1 < T_ind-1):
-                        V[t-T_ref_ind] = 60
+                        # V[t-T_ref_ind] = 60
                         V[t+1] = Vr
                     # // UPDATE ADAPTATION PROCESSES   
-                          
-                    for j in range(eta_l) : 
+                    j=0
+                    while j<eta_l:
                         eta_sum[t+1+j] += eta[j]
-                    for j in range(gamma_l) : 
-                        gamma_sum[t+1+j] += gamma[j]        
-                                
+                        j+=1
+
+                    j=0
+                    while j<gamma_l:
+                        gamma_sum[t+1+j] += gamma[j] 
+                        j+=1       
+                t+=1       
             time = np.arange(T_ind) * dt
             eta_sum = eta_sum[:T_ind]
             V_T = gamma_sum[:T_ind] + Vt_star
             spk_times = np.where(spks == 1.)[0] * dt
 
-            return time, V, eta_sum,gamma_sum, V_T, spk_times
+            return time, V, eta_sum, V_T, spk_times
 
-        time, V, eta_sum,gamma_sum, V_T, spk_times = inner_simulation(I, V0, p_dt, p_gl, p_C, p_El, p_Vr,
+        time, V, eta_sum,V_T, spk_times = inner_simulation(I, V0, p_dt, p_gl, p_C, p_El, p_Vr,
                                                             p_Tref, p_Vt_star, p_DV, p_lambda0, p_eta,
                                                             p_gamma)
     
         return (time, V, eta_sum, V_T, spk_times)
         
+
     def simulateDeterministic_forceSpikes(self, I, V0, spks):
-        
-        """
-        Simulate the subthresohld response of the GIF model to an input current I (nA) with time step dt.
-        Adaptation currents are forces to accur at times specified in the list spks (in ms) given as an argument
-        to the function.
-        V0 indicate the initial condition V(t=0)=V0.
-        
-        The function returns:
-        
-        - time     : ms, support for V, eta_sum, V_T, spks
-        - V        : mV, membrane potential
-        - eta_sum  : nA, adaptation current
-        """
- 
-        # # Input parameters
-        # p_T          = len(I)
-        # p_dt         = self.dt
-          
-          
-        # # Model parameters
-        # p_gl        = self.gl
-        # p_C         = self.C 
-        # p_El        = self.El
-        # p_Vr        = self.Vr
-        # p_Tref      = self.Tref
-        # p_Tref_i    = int(self.Tref/self.dt)
-    
-    
-        # # Model kernel      
-        # (p_eta_support, p_eta) = self.eta.getInterpolatedFilter(self.dt)   
-        # p_eta       = p_eta.astype('double')
-        # p_eta_l     = len(p_eta)
-
-
-        # # Define arrays
-        # V        = np.array(np.zeros(p_T), dtype="double")
-        # I        = np.array(I, dtype="double")
-        # spks     = np.array(spks, dtype="double")                      
-        # spks_i   = Tools.timeToIndex(spks, self.dt)
-
-
-        # # Compute adaptation current (sum of eta triggered at spike times in spks) 
-        # eta_sum  = np.array(np.zeros(p_T + 1.1*p_eta_l + p_Tref_i), dtype="double")   
-        
-        # for s in spks_i :
-        #     eta_sum[s + 1 + p_Tref_i  : s + 1 + p_Tref_i + p_eta_l] += p_eta
-        
-        # eta_sum  = eta_sum[:p_T]  
-   
-   
-        # # Set initial condition
-        # V[0] = V0
-        
-    
-        # code = """ 
-        #         #include <math.h>
-                
-        #         int   T_ind      = int(p_T);                
-        #         float dt         = float(p_dt); 
-                
-        #         float gl         = float(p_gl);
-        #         float C          = float(p_C);
-        #         float El         = float(p_El);
-        #         float Vr         = float(p_Vr);
-        #         int   Tref_ind   = int(float(p_Tref)/dt);
-
-
-        #         int next_spike = spks_i[0] + Tref_ind;
-        #         int spks_cnt = 0;
- 
-                                                                       
-        #         for (int t=0; t<T_ind-1; t++) {
-    
-    
-        #             // INTEGRATE VOLTAGE
-        #             V[t+1] = V[t] + dt/C*( -gl*(V[t] - El) + I[t] - eta_sum[t] );
-               
-               
-        #             if ( t == next_spike ) {
-        #                 spks_cnt = spks_cnt + 1;
-        #                 next_spike = spks_i[spks_cnt] + Tref_ind;
-        #                 V[t-1] = 0 ;                  
-        #                 V[t] = Vr ;
-        #                 t=t-1;           
-        #             }
-               
-        #         }
-        
-        #         """
- 
-        # vars = [ 'p_T','p_dt','p_gl','p_C','p_El','p_Vr','p_Tref','V','I','eta_sum','spks_i' ]
-        
-        
-
-        # v = weave.inline(code, vars)
-
-        # time = np.arange(p_T)*self.dt
-        # eta_sum = eta_sum[:p_T]     
-
-        # return (time, V, eta_sum)
-
-
         """
         Simulate the subthreshold response of the GIF model to an input current I (nA) with time step dt.
         Adaptation currents are forced to occur at times specified in the list spks (in ms) given as an argument
-        to the function. V0 indicates the initial condition V(t=0)=V0.
-        
+        to the function.
+        V0 indicate the initial condition V(t=0)=V0.
+
         The function returns:
-        
         - time     : ms, support for V, eta_sum, V_T, spks
         - V        : mV, membrane potential
         - eta_sum  : nA, adaptation current
         """
+
         # Input parameters
         p_T = len(I)
         p_dt = self.dt
-        
+
         # Model parameters
         p_gl = self.gl
-        p_C = self.C 
+        p_C = self.C
         p_El = self.El
         p_Vr = self.Vr
         p_Tref = self.Tref
         p_Tref_i = int(self.Tref / self.dt)
+
+        # Model kernel
+        (p_eta_support, p_eta) = self.eta.getInterpolatedFilter(self.dt)
         
-        # Model kernel      
-        (p_eta_support, p_eta) = self.eta.getInterpolatedFilter(self.dt)   
+
         p_eta = p_eta.astype('double')
         p_eta_l = len(p_eta)
-        
-
 
         # Define arrays
+        V = np.zeros(p_T, dtype="double")
+        I = np.array(I, dtype="double")
+        spks = np.array(spks, dtype="double")
+        spks_i = Tools.timeToIndex(spks, self.dt)
 
-        I = np.array(I, dtype=np.double)
-        spks = np.array(spks, dtype=np.double)                      
-        spks_i = np.array(Tools.timeToIndex(spks, self.dt), dtype=np.int32)
-        
-        # Compute adaptation current (sum of eta triggered at spike times in spks) 
-        eta_sum = np.zeros(int(p_T + 1.1 * p_eta_l + p_Tref_i), dtype=np.double)   
-        
+        eta_sum = np.zeros(int(p_T + 1.1 * p_eta_l) + p_Tref_i, dtype="double")
         for s in spks_i:
             eta_sum[s + 1 + p_Tref_i: s + 1 + p_Tref_i + p_eta_l] += p_eta
-        
-        eta_sum = eta_sum[:p_T]  
 
-        @numba.jit(nopython=True)
-        def runforV(V0,p_T,p_dt,p_C,p_gl,p_El,p_Vr,I,eta_sum):
-
-            # Set initial condition
-            V = np.zeros(p_T, dtype=np.double)
-            V[0] = V0
-
-            # Simulate the model
-            for t in range(p_T - 1):
-                # Integrate voltage
-                V[t+1] = V[t] + p_dt / p_C * (-p_gl * (V[t] - p_El) + I[t] - eta_sum[t])
-
-                # Check for forced spikes
-                if t in spks_i:
-                    V[t-1] = 0
-                    V[t] = p_Vr
-            return V
-        V = runforV(V0,p_T,p_dt,p_C,p_gl,p_El,p_Vr,I,eta_sum)
-        # Compute time array
-        time = np.arange(p_T) * self.dt
-
-        # Trim eta_sum to match time array length
         eta_sum = eta_sum[:p_T]
 
+
+
+        @jit(nopython=True)
+        def compute_simulation(V,V0, I, spks_i, p_T, p_dt, p_gl, p_C, p_El, p_Vr, p_Tref_i, p_eta, p_eta_l,eta_sum):
+
+            V[0] = V0
+            next_spike = spks_i[0] + p_Tref_i
+            spks_cnt = 0
+
+            t=0
+            while t<p_T-1:
+                
+                V[t + 1] = V[t] + p_dt / p_C * (-p_gl * (V[t] - p_El) + I[t] - eta_sum[t])
+
+                if t == next_spike:
+                    spks_cnt += 1
+                    next_spike = spks_i[spks_cnt] + p_Tref_i
+                    V[t - 1] = 0
+                    V[t] = p_Vr
+                    t=t-1
+                t+=1
+
+
+            return V
+
+        V = compute_simulation(V,V0, I, spks_i, p_T, p_dt, p_gl, p_C, p_El, p_Vr, p_Tref_i, p_eta, p_eta_l,eta_sum)
+
+        time = np.arange(p_T) * self.dt
+
         return time, V, eta_sum
-           
+
+
     ########################################################################################################
     # METHODS FOR MODEL FITTING
     ########################################################################################################  
@@ -414,10 +323,10 @@ class GIF(ThresholdModel) :
         """
         
         # Three step procedure used for parameters extraction 
-        
-        print("\n################################")
-        print("# Fit GIF")
-        print("################################\n")
+        if self.print_log:
+            print("################################")
+            print("# Fit GIF")
+            print("################################")
         
         self.fitVoltageReset(experiment, self.Tref, do_plot=False)
         
@@ -429,8 +338,6 @@ class GIF(ThresholdModel) :
     ########################################################################################################
     # FIT VOLTAGE RESET GIVEN ABSOLUTE REFRACOTORY PERIOD (step 1)
     ########################################################################################################
-
-
     def fitVoltageReset(self, experiment, Tref, do_plot=False):
         
         """
@@ -439,8 +346,8 @@ class GIF(ThresholdModel) :
         Tref: ms, absolute refractory period. 
         The voltage reset is estimated by computing the spike-triggered average of the voltage.
         """
-        
-        print("Estimate voltage reset (Tref = %0.1f ms)..." % (Tref))
+        if self.print_log:
+            print("Estimate voltage reset (Tref = %0.1f ms)..." % (Tref))
         
         # Fix absolute refractory period
         self.dt = experiment.dt
@@ -457,7 +364,6 @@ class GIF(ThresholdModel) :
                     all_spike_nb += spike_nb
 
         spike_average = np.mean(all_spike_average, axis=0)
-        
         # Estimate voltage reset
         Tref_ind = np.where(support >= self.Tref)[0][0]
         self.Vr = spike_average[Tref_ind]
@@ -471,15 +377,12 @@ class GIF(ThresholdModel) :
             plt.plot(support, spike_average, 'black')
             plt.plot([support[Tref_ind]], [self.Vr], '.', color='red')            
             plt.show()
+        if self.print_log:
+            print("Done! Vr = %0.2f mV (computed on %d spikes)" % (self.Vr, all_spike_nb))
         
-        print("Done! Vr = %0.2f mV (computed on %d spikes)" % (self.Vr, all_spike_nb))
-        
-
-
     ########################################################################################################
     # FUNCTIONS RELATED TO FIT OF SUBTHRESHOLD DYNAMICS (step 2)
     ########################################################################################################
-
 
     def fitSubthresholdDynamics(self, experiment, DT_beforeSpike=5.0):
           
@@ -489,8 +392,8 @@ class GIF(ThresholdModel) :
         experiment: Experiment object on which the model is fitted.
         DT_beforeSpike: in ms, data right before spikes are excluded from the fit. This parameter can be used to define that time interval.
         """  
-                  
-        print("\nGIF MODEL - Fit subthreshold dynamics...") 
+        if self.print_log:                  
+            print("\nGIF MODEL - Fit subthreshold dynamics...") 
             
         # Expand eta in basis functions
         self.dt = experiment.dt
@@ -509,15 +412,16 @@ class GIF(ThresholdModel) :
             if tr.useTrace :
         
                 cnt += 1
-                reprint( "Compute X matrix for repetition %d" % (cnt) )          
+                if self.print_log:                  
+                    print( "Compute X matrix for repetition %d" % (cnt) )          
                 
                 # Compute the the X matrix and Y=\dot_V_data vector used to perform the multilinear linear regression (see Eq. 17.18 in Pozzorini et al. PLOS Comp. Biol. 2015)
                 (X_tmp, Y_tmp) = self.fitSubthresholdDynamics_Build_Xmatrix_Yvector(tr, DT_beforeSpike=DT_beforeSpike)
      
                 X.append(X_tmp)
                 Y.append(Y_tmp)
-    
-    
+
+
         # Concatenate matrixes associated with different traces to perform a single multilinear regression
         ####################################################################################################
         if cnt == 1:
@@ -534,8 +438,8 @@ class GIF(ThresholdModel) :
         
         # Perform linear Regression defined in Eq. 17 of Pozzorini et al. PLOS Comp. Biol. 2015
         ####################################################################################################
-        
-        print("\nPerform linear regression...")
+        if self.print_log:                  
+            print("\nPerform linear regression...")
         XTX     = np.dot(np.transpose(X), X)
         XTX_inv = inv(XTX)
         XTY     = np.dot(np.transpose(X), Y)
@@ -550,16 +454,19 @@ class GIF(ThresholdModel) :
         self.gl = -b[0]*self.C
         self.El = b[2]*self.C/self.gl
         self.eta.setFilter_Coefficients(-b[3:]*self.C)
-    
-    
-        self.printParameters()   
+
+
+        if self.print_log:
+            self.printParameters()   
         
         
         # Compute percentage of variance explained on dV/dt
         ####################################################################################################
 
-        var_explained_dV = 1.0 - np.mean((Y - np.dot(X,b))**2)/np.var(Y)
-        print("Percentage of variance explained (on dV/dt): %0.2f" % (var_explained_dV*100.0))
+        self.var_explained_dV = 1.0 - np.mean((Y - np.dot(X,b))**2)/np.var(Y)
+        if self.print_log:                  
+
+            print("Percentage of variance explained (on dV/dt): %0.2f" % (self.var_explained_dV*100.0))
 
         
         # Compute percentage of variance explained on V (see Eq. 26 in Pozzorini et al. PLOS Comp. Biol. 2105)
@@ -571,20 +478,20 @@ class GIF(ThresholdModel) :
         for tr in experiment.trainingset_traces :
         
             if tr.useTrace :
-
+                
                 # Simulate subthreshold dynamics 
                 (time, V_est, eta_sum_est) = self.simulateDeterministic_forceSpikes(tr.I, tr.V[0], tr.getSpikeTimes())
-                
+         
                 indices_tmp = tr.getROI_FarFromSpikes(0.0, self.Tref)
-                
                 SSE += sum((V_est[indices_tmp] - tr.V[indices_tmp])**2)
                 VAR += len(indices_tmp)*np.var(tr.V[indices_tmp])
+
                 
-        var_explained_V = 1.0 - SSE / VAR
+        self.var_explained_V = 1.0 - SSE / VAR
+        if self.print_log:                  
         
-        print("Percentage of variance explained (on V): %0.2f" % (var_explained_V*100.0))
-                
-                    
+            print("Percentage of variance explained (on V): %0.2f" % (self.var_explained_V*100.0))
+                             
     def fitSubthresholdDynamics_Build_Xmatrix_Yvector(self, trace, DT_beforeSpike=5.0):
            
         """
@@ -596,11 +503,11 @@ class GIF(ThresholdModel) :
         # Length of the voltage trace       
         Tref_ind = int(self.Tref/trace.dt)
         
-        
         # Select region where to perform linear regression (specified in the ROI of individual taces)
         ####################################################################################################
         selection = trace.getROI_FarFromSpikes(DT_beforeSpike, self.Tref)
         selection_l = len(selection)
+
         
         
         # Build X matrix for linear regression (see Eq. 18 in Pozzorini et al. PLOS Comp. Biol. 2015)
@@ -615,6 +522,7 @@ class GIF(ThresholdModel) :
        
         # Compute and fill the remaining columns associated with the spike-triggered current eta               
         X_eta = self.eta.convolution_Spiketrain_basisfunctions(trace.getSpikeTimes() + self.Tref, trace.T, trace.dt) 
+        
         X = np.concatenate( (X, X_eta[selection,:]), axis=1 )
 
 
@@ -623,13 +531,10 @@ class GIF(ThresholdModel) :
         Y = np.array( np.concatenate( (np.diff(trace.V)/trace.dt, [0]) ) )[selection]      
 
         return (X, Y)
-        
-        
-        
+      
     ########################################################################################################
     # FUNCTIONS RELATED TO FIT FIRING THRESHOLD PARAMETERS (step 3)
     ########################################################################################################        
- 
          
     def fitStaticThreshold(self, experiment):
         
@@ -640,8 +545,8 @@ class GIF(ThresholdModel) :
         a model featuting a spike-triggered current gamma). See Pozzorini et al. PLOS Comp. Biol. 2015
         experiment: Experiment object on which the model is fitted.
         """
-
-        print("\nGIF MODEL - Fit static threshold...\n")
+        if self.print_log:
+            print("\nGIF MODEL - Fit static threshold...\n")
 
         
         self.setDt(experiment.dt)
@@ -681,7 +586,7 @@ class GIF(ThresholdModel) :
         self.Vt_star = -beta_opt[1]*self.DV 
         self.gamma.setFilter_toZero()
         
-        self.printParameters()
+        # self.printParameters()
   
     def fitThresholdDynamics(self, experiment):
                   
@@ -691,8 +596,8 @@ class GIF(ThresholdModel) :
         
         experiment: Experiment object on which the model is fitted.
         """        
-        
-        print("\nGIF MODEL - Fit dynamic threshold...\n")
+        if self.print_log:
+            print("\nGIF MODEL - Fit dynamic threshold...\n")
         
         
         self.setDt(experiment.dt)
@@ -713,7 +618,7 @@ class GIF(ThresholdModel) :
         self.Vt_star = -beta_opt[1]*self.DV 
         self.gamma.setFilter_Coefficients(-beta_opt[2:]*self.DV)
 
-        self.printParameters()
+        # self.printParameters()
            
     def maximizeLikelihood(self, experiment, beta0, buildXmatrix, maxIter=10**3, stopCond=10**-6) :
     
@@ -780,8 +685,8 @@ class GIF(ThresholdModel) :
 
         # Perform gradient ascent
         ################################################################################################
-    
-        print("Maximize log-likelihood (bit/spks)...")
+        if self.print_log:
+            print("Maximize log-likelihood (bit/spks)...")
                         
         beta = beta0
         old_L = 1
@@ -803,9 +708,9 @@ class GIF(ThresholdModel) :
                 (L_tmp,G_tmp,H_tmp) = self.computeLikelihoodGradientHessian(beta, all_X[trace_i], all_X_spikes[trace_i], all_sum_X_spikes[trace_i])
                 
                 # note that since differentiation is linear: gradient of sum = sum of gradient ; hessian of sum = sum of hessian
-                L+=L_tmp; 
-                G+=G_tmp; 
-                H+=H_tmp;
+                L+=L_tmp 
+                G+=G_tmp 
+                H+=H_tmp
             
             
             # Update optimal parametes (ie, implement Newton step) by tacking into account multiple traces
@@ -813,7 +718,8 @@ class GIF(ThresholdModel) :
             beta = beta - learning_rate*np.dot(inv(H),G)
                 
             if (i>0 and abs((L-old_L)/old_L) < stopCond) :              # If converged
-                print("\nConverged after %d iterations!\n" % (i+1))
+                if self.print_log:
+                    print("\nConverged after %d iterations!\n" % (i+1))
                 break
             
             old_L = L
@@ -821,7 +727,8 @@ class GIF(ThresholdModel) :
             # Compute normalized likelihood (for print)
             # The likelihood is normalized with respect to a poisson process and units are in bit/spks
             L_norm = (L-logL_poisson)/np.log(2)/N_spikes_tot
-            reprint(L_norm)
+            if self.print_log:
+                print(L_norm)
             
             if math.isnan(L_norm):
                 print("Problem during gradient ascent. Optimizatino stopped.")
@@ -829,7 +736,7 @@ class GIF(ThresholdModel) :
     
         if (i==maxIter - 1) :                                           # If too many iterations
             
-            print("\nNot converged after %d iterations.\n" % (maxIter))
+            print("Not converged after %d iterations." % (maxIter))
 
 
         return beta
@@ -843,7 +750,7 @@ class GIF(ThresholdModel) :
         
         # IMPORTANT: in general we assume that the lambda_0 = 1 Hz
         # The parameter lambda0 is redundant with Vt_star, so only one of those has to be fitted.
-        # We genearlly fix lambda_0 adn fit Vt_star
+        # We genearlly fix lambda_0 and fit Vt_star
               
         dt = self.dt/1000.0     # put dt in units of seconds (to be consistent with lambda_0)
         
@@ -936,14 +843,11 @@ class GIF(ThresholdModel) :
         sum_X_spikes = np.sum( X_spikes, axis=0)
                      
         return (X, X_spikes, sum_X_spikes,  N_spikes, T_l)
- 
- 
-        
+   
     ########################################################################################################
     # PLOT AND PRINT FUNCTIONS
     ########################################################################################################     
-        
-        
+              
     def plotParameters(self) :
         
         """
@@ -992,8 +896,7 @@ class GIF(ThresholdModel) :
         plt.subplots_adjust(left=0.05, bottom=0.15, right=0.95, top=0.92, wspace=0.35, hspace=0.25)
 
         plt.show()
-      
-      
+        
     def printParameters(self):
 
         """
@@ -1014,6 +917,24 @@ class GIF(ThresholdModel) :
         print("DV (mV):\t%0.3f"     % (self.DV))          
         print("-------------------------\n")
                   
+    def saveparams(self,paramlist,gamma,cond,trial,exp_name):
+        paramlist.append([self.C/self.gl,
+                          1.0/self.gl,
+                          self.C,
+                          self.gl,
+                          self.El,
+                          self.Tref,
+                          self.Vr,
+                          self.Vt_star,
+                          self.DV,
+                          self.var_explained_V,
+                          self.var_explained_dV,
+                          gamma,
+                          cond,
+                          trial,
+                          exp_name
+                          ])
+        return paramlist
 
     @classmethod
     def compareModels(cls, GIFs, labels=None):

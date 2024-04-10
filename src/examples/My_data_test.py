@@ -1,6 +1,6 @@
 import sys
 sys.path.append('C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/src')
-
+import os
 from Experiment import *
 from AEC_Badel import *
 from GIF import *
@@ -8,17 +8,14 @@ from Filter_Rect_LogSpaced import *
 from Filter_Rect_LinSpaced import *
 import pickle
 import matplotlib.pyplot as plt
+sys.path.append('C:/Users/Nishant Joshi/Downloads/Old_code/repo/single_cell_analysis/scripts')
+from utils import * 
 
 
 """
 This file shows how to fit a GIF to some experimental data.
 More instructions are provided on the website. 
 """
-
-############################################################################################################
-# STEP 1: LOAD EXPERIMENTAL DATA
-############################################################################################################
-myExp = Experiment('Experiment 1', 0.05)
 
 #Inhibitory
 # with open("G:/My Drive/Bernstein/170725_NC_82_INH.pickle",'rb') as f:
@@ -28,91 +25,12 @@ myExp = Experiment('Experiment 1', 0.05)
 # spikes_data = data['spikes']    
 
 #Excitatory
-with open("G:/My Drive/Bernstein/170815_NC_109_EXC.pickle",'rb') as f:
-    data = pickle.load(f)
-I_data = data['I'][:120*20000]
-V_data = data['V'][:120*20000]
-spikes_data = data['spikes']    
+# with open("G:/My Drive/Bernstein/170815_NC_109_EXC.pickle",'rb') as f:
+#     data = pickle.load(f)
+# I_data = data['I'][:120*20000]
+# V_data = data['V'][:120*20000]
+# spikes_data = data['spikes'] 
 
-# Load AEC data
-myExp.setAECTrace(V_data[:int(10*20000)],1e-3,I_data[:int(10*20000)] ,1e-12, 10000.0, FILETYPE='Array')
-
-# Load training set data
-myExp.addTrainingSetTrace(V_data,1e-3,I_data, 1e-12, 120000.0, FILETYPE='Array')
-
-# Load test set data
-
-# Plot data
-#myExp.plotTrainingSet()
-#myExp.plotTestSet()
-
-
-############################################################################################################
-# STEP 2: ACTIVE ELECTRODE COMPENSATION
-############################################################################################################
-
-# Create new object to perform AEC
-myAEC = AEC_Badel(myExp.dt)
-
-# Define metaparametres
-myAEC.K_opt.setMetaParameters(length=150.0, binsize_lb=myExp.dt, binsize_ub=2.0, slope=30.0, clamp_period=1.0)
-myAEC.p_expFitRange = [3.0,150.0]  
-myAEC.p_nbRep = 15     
-
-# Assign myAEC to myExp and compensate the voltage recordings
-myExp.setAEC(myAEC)  
-myExp.performAEC()  
-
-plt.plot(myExp.trainingset_traces[0].V[:1*20000],label='AEC corrected')
-plt.plot(V_data[:1*20000],label='Original')
-plt.legend()
-plt.show()
-# # Plot AEC filters (Kopt and Ke)
-# myAEC.plotKopt()
-# myAEC.plotKe()
-
-# # Plot training and test set
-# myExp.plotTrainingSet()
-# myExp.plotTestSet()
-
-
-############################################################################################################
-# STEP 3: FIT GIF MODEL TO DATA
-############################################################################################################
-
-# Create a new object GIF 
-myGIF = GIF(0.05)
-
-# Define parameters
-myGIF.Tref = 4.0  
-
-myGIF.eta = Filter_Rect_LogSpaced()
-myGIF.eta.setMetaParameters(length=500.0, binsize_lb=2.0, binsize_ub=1000.0, slope=4.5)
-
-
-myGIF.gamma = Filter_Rect_LogSpaced()
-myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=5.0, binsize_ub=1000.0, slope=5.0)
-
-
-
-# Define the ROI of the training set to be used for the fit (in this example we will use only the first 100 s)
-myExp.trainingset_traces[0].setROI([[0,100000.0]])
-
-# To visualize the training set and the ROI call again
-myExp.detectSpikes_python()
-# myExp.plotTrainingSet()
-
-# Perform the fit
-myGIF.fit(myExp, DT_beforeSpike=5.0)
-
-# Plot the model parameters
-myGIF.printParameters()
-myGIF.plotParameters()   
-
-I = myExp.trainingset_traces[0].I
-V_exp = myExp.trainingset_traces[0].V
-spks = myExp.trainingset_traces[0].spks*myExp.dt
-(time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
 
 
 def getBinarySpikeTrain(V,spikes,dt,type='zero'):
@@ -124,84 +42,145 @@ def getBinarySpikeTrain(V,spikes,dt,type='zero'):
         b_spikes = np.zeros(len(V))*np.nan
     b_spikes[spikeinds] =1
     return b_spikes
-spks_model = getBinarySpikeTrain(V,S,myExp.dt,type='nan')
-spks_data = getBinarySpikeTrain(V_exp,spks,myExp.dt,type='nan')
 
+def get_gamma_factor(modelspks, dataspks, delta, time, dt, rate_correction=True):
+    """
+    Calculate gamma factor between model and target spike trains,
+    with precision delta.
 
-plot_time = 1 # s
-plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
-plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
-plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
-plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
-plt.legend(loc='lower left')
-plt.show()
+    Parameters
+    ----------
+    model: `list` or `~numpy.ndarray`
+        model trace
+    data: `list` or `~numpy.ndarray`
+        data trace
+    delta: `~brian2.units.fundamentalunits.Quantity`
+        time window
+    dt: `~brian2.units.fundamentalunits.Quantity`
+        time step
+    time: `~brian2.units.fundamentalunits.Quantity`
+        total time of the simulation
+    rate_correction: bool
+        Whether to include an error term that penalizes differences in firing
+        rate, following `Clopath et al., Neurocomputing (2007)
+        <https://doi.org/10.1016/j.neucom.2006.10.047>`_.
 
+    """
+    model = np.array(modelspks)
+    data = np.array(dataspks)
 
+    model = np.array(np.int32(model / dt), dtype=int)
+    data = np.array(np.int32(data / dt), dtype=int)
+    delta_diff = int(np.int32(delta / dt))
 
-plot_time = 5 # s
-plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
-plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
-plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
-plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
-plt.legend(loc='lower left')
-plt.show()
+    model_length = len(model)
+    data_length = len(data)
+    # data_rate = firing_rate(data) * Hz
+    data_rate = data_length / time
+    model_rate = model_length / time
 
+    if model_length > 1:
+        bins = .5 * (model[1:] + model[:-1])
+        indices = np.digitize(data, bins)
+        diff = np.abs(data - model[indices])
+        matched_spikes = (diff <= delta_diff)
+        coincidences = np.sum(matched_spikes)
+    elif model_length == 0:
+        coincidences = 0
+    else:
+        indices = [np.amin(abs(model - data[i])) <= delta_diff for i in np.arange(data_length)]
+        coincidences = sum(indices)
 
-plot_time = 100 # s
-plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
-plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
-plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
-plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
-plt.legend(loc='lower left')
-plt.show()
+    # Normalization of the coincidences count
+    NCoincAvg = 2 * delta * data_length * data_rate
+    norm = .5*(1 - 2 * data_rate * delta)
+    gamma = (coincidences - NCoincAvg)/(norm*(model_length + data_length))
 
+    if rate_correction:
+        rate_term = 1 + 2*np.abs((data_rate - model_rate)/data_rate)
+    else:
+        rate_term = 1
+    # return gamma
 
-
-## Save the model
-#myGIF.save('./myGIF.pck')
+    return np.clip(rate_term - gamma, 0, np.inf)
 
 
 ############################################################################################################
-# STEP 3A (OPTIONAL): PLAY A BIT WITH THE FITTED MODEL
+# STEP 1: LOAD EXPERIMENTAL DATA
 ############################################################################################################
+paramlist  =  [] 
+path = 'D:/Analyzed/'
+for file in os.listdir(path):
+    
 
-## Reload the model
-#myGIF = GIF.load('./myGIF.pck')
-#
-## Generate OU process with temporal correlation 3 ms and mean modulated by a sinusoildal function of 1 Hz
-#I_OU = Tools.generateOUprocess_sinMean(f=1.0, T=5000.0, tau=3.0, mu=0.3, delta_mu=0.5, sigma=0.1, dt=0.1)
-#
-## Simulate the model with the I_OU current. Use the reversal potential El as initial condition (i.e., V(t=0)=El)
-#(time, V, I_a, V_t, S) = myGIF.simulate(I_OU, myGIF.El)
-#
-## Plot the results of the simulation
-#plt.figure(figsize=(14,5), facecolor='white')
-#plt.subplot(2,1,1)
-#plt.plot(time, I_OU, 'gray')
-#plt.ylabel('I (nA)')
-#plt.subplot(2,1,2)
-#plt.plot(time, V,'black', label='V')
-#plt.plot(time, V_t,'red', label='V threshold')
-#plt.ylabel('V (mV)')
-#plt.xlabel('Time (ms)')
-#plt.legend()
-#plt.show()
+    data = loadmatInPy(path+file)
+    for trial,data_i in enumerate(data):
+        I_data = data_i['input_current'][:120*20000]
+        V_data = data_i['membrane_potential'][:120*20000]
+        spikes_data = data_i['spikeindices'] 
+        cond = data_i['input_generation_settings']['condition']
+        trial_i = trial
+        experimentname = data_i['input_generation_settings']['experimentname']
+        myExp = Experiment('Experiment 1', 0.05)
+
+        # Load AEC data
+        # myExp.setAECTrace(V_data[:int(10*20000)],1e-3,I_data[:int(10*20000)] ,1e-12, 10000.0, FILETYPE='Array')
+
+        # Load training set data
+        myExp.addTrainingSetTrace(V_data,1e-3,I_data, 1e-12, 120000.0, FILETYPE='Array')
+
+        ############################################################################################################
+        # STEP 3: FIT GIF MODEL TO DATA
+        ############################################################################################################
+
+        # Create a new object GIF 
+        myGIF = GIF(0.05)
+        myGIF.print_log=False
+        # Define parameters
+        myGIF.Tref = 4.0  
+
+        myGIF.eta = Filter_Rect_LogSpaced()
+        myGIF.eta.setMetaParameters(length=500.0, binsize_lb=2.0, binsize_ub=1000.0, slope=4.5)
+
+
+        myGIF.gamma = Filter_Rect_LogSpaced()
+        myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=5.0, binsize_ub=1000.0, slope=5.0)
 
 
 
-############################################################################################################
-# STEP 4: EVALUATE THE GIF MODEL PERFORMANCE (USING MD*)
-############################################################################################################
+        # Define the ROI of the training set to be used for the fit (in this example we will use only the first 100 s)
+        myExp.trainingset_traces[0].setROI([[0,100000.0]])
 
-# Use the myGIF model to predict the spiking data of the test data set in myExp
+        # To visualize the training set and the ROI call again
+        myExp.detectSpikes_python()
+        # myExp.plotTrainingSet()
 
-# myPrediction = myExp.predictSpikes(myGIF, nb_rep=500)
+        # Perform the fit
+        myGIF.fit(myExp, DT_beforeSpike=5.0)
 
-# # Compute Md* with a temporal precision of +/- 4ms
-# Md = myPrediction.computeMD_Kistler(4.0, 0.1)    
+        # Plot the model parameters
+        # myGIF.printParameters()
+        # myGIF.plotParameters()   
 
-# # Plot data vs model prediction
-# myPrediction.plotRaster(delta=1000.0) 
+        I = myExp.trainingset_traces[0].I
+        V_exp = myExp.trainingset_traces[0].V
+        spks = myExp.trainingset_traces[0].spks*myExp.dt
+        (time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
+
+        spks_model = getBinarySpikeTrain(V,S,myExp.dt,type='nan')
+        spks_data = getBinarySpikeTrain(V_exp,spks,myExp.dt,type='nan')
+        gamma = get_gamma_factor(S/1000,spks/1000,4/1000,len(V)/20000,1/20000)
+        print('gamma:',gamma)
+
+
+        ## Save the model
+        myGIF.saveparams(paramlist,gamma,cond,trial_i,experimentname)
+        
+
+with open('D:/Biophysical_cluster/cluster_params.p','wb') as f:
+    pickle.dumps(paramlist)
+
+
 
 
 

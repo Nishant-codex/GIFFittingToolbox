@@ -44,16 +44,16 @@ myExp.addTrainingSetTrace(V_data,1e-3,I_data, 1e-12, 120000.0, FILETYPE='Array')
 ############################################################################################################
 
 # Create new object to perform AEC
-myAEC = AEC_Badel(myExp.dt)
+# myAEC = AEC_Badel(myExp.dt)
 
-# Define metaparametres
-myAEC.K_opt.setMetaParameters(length=150.0, binsize_lb=myExp.dt, binsize_ub=2.0, slope=30.0, clamp_period=1.0)
-myAEC.p_expFitRange = [3.0,150.0]  
-myAEC.p_nbRep = 15     
+# # Define metaparametres
+# myAEC.K_opt.setMetaParameters(length=150.0, binsize_lb=myExp.dt, binsize_ub=2.0, slope=30.0, clamp_period=1.0)
+# myAEC.p_expFitRange = [3.0,150.0]  
+# myAEC.p_nbRep = 15     
 
-# Assign myAEC to myExp and compensate the voltage recordings
-myExp.setAEC(myAEC)  
-myExp.performAEC()  
+# # Assign myAEC to myExp and compensate the voltage recordings
+# myExp.setAEC(myAEC)  
+# myExp.performAEC()  
 
 # # Plot AEC filters (Kopt and Ke)
 # myAEC.plotKopt()

@@ -85,9 +85,6 @@ class Filter_Rect_LogSpaced(Filter_Rect) :
         
         self.filter_coeffNb = len(self.bins)-1
 
-        
-        
-
     ################################################################
     # IMPLEMENT ABSTRACT METHODS OF Filter
     ################################################################
@@ -118,7 +115,6 @@ class Filter_Rect_LogSpaced(Filter_Rect) :
             
             X[:,l] = tmp[:T_i]
         
-        print(X.shape)
         return X
     
     

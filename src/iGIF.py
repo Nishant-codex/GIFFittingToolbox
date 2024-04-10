@@ -4,7 +4,7 @@ import numpy as np
 
 import abc
 
-from scipy import weave
+# from scipy import weave
 from numpy.linalg import inv
 
 from SpikingModel import *
@@ -16,7 +16,7 @@ from Tools import reprint
 
 
 
-class iGIF(GIF) :
+class iGIF(GIF, metaclass=abc.ABCMeta) :
 
     """
     Abstract class to define the:
@@ -45,8 +45,6 @@ class iGIF(GIF) :
     Classes that inherit form iGIF must specify the nature of the coupling f(V) (this function can eg be defined as 
     a liner sum of rectangular basis functions to perform a nonparametric fit).
     """
-    
-    __metaclass__  = abc.ABCMeta
 
 
     def __init__(self, dt=0.1):
@@ -135,18 +133,18 @@ class iGIF(GIF) :
 
         # PRINT PARAMETERS        
 
-        print "\n#####################################"
-        print "iGIF model comparison"
-        print "#####################################\n"
+        print("\n#####################################")
+        print("iGIF model comparison")
+        print("#####################################\n")
         
         cnt = 0
         for iGIF in iGIFs :
             
-            print "Model: " + labels[cnt]          
+            print("Model: " + labels[cnt])          
             iGIF.printParameters()
             cnt+=1
 
-        print "#####################################\n"                
+        print("#####################################\n")                
         
         
                 
@@ -331,3 +329,4 @@ class iGIF(GIF) :
         plt.yticks([])     
 
         plt.show()
+

@@ -3,6 +3,9 @@ import numpy as np
 
 from scipy.optimize import leastsq
 # import weave as weave
+import numba
+
+from numba import jit
 
 import sys
 
@@ -33,50 +36,42 @@ def reprint(str):
 # Generate Ornstein-Uhlenbeck process
 ###########################################################
 
-# def generateOUprocess(T=10000.0, tau=3.0, mu=0.0, sigma=1.0, dt=0.1):
+def generateOUprocess(T=10000.0, tau=3.0, mu=0.0, sigma=1.0, dt=0.1):
     
-#     """
-#     Generate an Ornstein-Uhlenbeck (stationnary) process with:
-#     - mean mu
-#     - standard deviation sigma
-#     - temporal correlation tau (ms)
-#     The duration of the signal is specified by the input parameter T (in ms).
-#     The process is generated in discrete time with temporal resolution dt (in ms)
-#     """
+    """
+    Generate an Ornstein-Uhlenbeck (stationnary) process with:
+    - mean mu
+    - standard deviation sigma
+    - temporal correlation tau (ms)
+    The duration of the signal is specified by the input parameter T (in ms).
+    The process is generated in discrete time with temporal resolution dt (in ms)
+    """
     
-#     T_ind = int(T/dt)
-    
-#     white_noise = np.random.randn(T_ind)
-#     white_noise = white_noise.astype("double")    
-      
-#     OU_process = np.zeros(T_ind)
-#     OU_process = OU_process.astype("double")
-    
-
-        
-#     code =  """
-    
-#             #include <math.h>
-                
-#             int cT_ind    = int(T_ind); 
-#             float cdt     = float(dt);
-#             float ctau    = float(tau);
-#             float cmu     = float(mu);            
-#             float csigma  = float(sigma);    
-                        
-#             float OU_k1 = cdt / ctau ;
-#             float OU_k2 = sqrt(2.0*cdt/ctau) ;            
-
-#             for (int t=0; t < cT_ind-1; t++) {
-#                 OU_process[t+1] = OU_process[t] + (cmu - OU_process[t])*OU_k1 +  csigma*OU_k2*white_noise[t] ;
-#             }
+    numba.jit(nopython=False)
+    def OU(T,tau,mu,sigma,dt):
             
-#             """
+            T_ind = int(T/dt)
     
-#     vars = ['T_ind', 'dt', 'tau', 'sigma','mu', 'OU_process', 'white_noise']
-#     v = weave.inline(code,vars)
-    
-#     return OU_process
+            white_noise = np.random.randn(T_ind)
+            white_noise = np.float32(white_noise)    
+            
+            OU_process = np.zeros(T_ind)
+            OU_process = np.float32(OU_process)
+            
+
+            cT_ind  = np.int32(T_ind) 
+            cdt     = np.float32(dt)
+            ctau    = np.float32(tau)
+            cmu     = np.float32(mu)            
+            csigma  = np.float32(sigma) 
+            OU_k1 = cdt / ctau 
+            OU_k2 = np.sqrt(2.0*cdt/ctau) 
+            for t in range(cT_ind-1) :
+                OU_process[t+1] = OU_process[t] + (cmu - OU_process[t])*OU_k1 +  csigma*OU_k2*white_noise[t] 
+            return OU_process
+    OU_process = OU(T,tau,mu,sigma,dt)        
+            
+    return OU_process
 
 
 def generateOUprocess_sinSigma(f=1.0, T=10000.0, tau=3.0, mu=0.0, sigma=1.0, delta_sigma=0.5, dt=0.1):

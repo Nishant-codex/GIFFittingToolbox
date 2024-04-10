@@ -43,7 +43,7 @@ class Trace :
         # LOAD EXPERIMENTAL DATA FROM IGOR FILE (V AND I SHOULD COTAIN PATH OF DATA FILES)
         if FILETYPE=='Igor' :
                         
-            V_rec       = io.IgorIO(V).read_analogsignal() #ReadIBW.read(V)
+            V_rec       = io.IgorIO(V).read_analogsignal() 
             self.V_rec  = np.array(V_rec[:int(T/self.dt)])[:,0]*V_units/10**-3        # convert voltage trace to mV
             I           = io.IgorIO(I).read_analogsignal()
             self.I      = np.array(I[:int(T/self.dt)])[:,0]*I_units/10**-9             # convert input current trace to nA  
@@ -125,7 +125,6 @@ class Trace :
         DT_after: ms
         These two parameters define the region to cut around each spike.
         """
-        
         L = len(self.V)
         
         LR_flag = np.ones(L)    
@@ -139,7 +138,6 @@ class Trace :
         DT_before_i = int(DT_before/self.dt)
         DT_after_i  = int(DT_after/self.dt)
         
-        
         for s in self.spks :
             
             lb = max(0, s - DT_before_i)
@@ -149,7 +147,6 @@ class Trace :
             
         
         indices = np.where(LR_flag==0)[0]  
-
         return indices
 
     
@@ -183,6 +180,18 @@ class Trace :
     # FUNCTIONS ASSOCIATED TO SPIKES IN THE TRACE
     #################################################################################################
 
+    # def detectSpikes_python(self, threshold=0.0, ref=3.0):
+        
+    #     """
+    #     Detect action potentials by threshold crossing (parameter threshold, mV) from below (i.e. with dV/dt>0).
+    #     To avoid multiple detection of same spike due to noise, use an 'absolute refractory period' ref, in ms.
+    #     """ 
+        
+    #     spike_threshold = threshold
+    #     self.spks, _ = find_peaks(self.V,height=spike_threshold)
+    #     self.spks = np.array(self.spks)
+    #     self.spks_flag = True
+
     def detectSpikes_python(self, threshold=0.0, ref=3.0):
         
         """
@@ -190,11 +199,18 @@ class Trace :
         To avoid multiple detection of same spike due to noise, use an 'absolute refractory period' ref, in ms.
         """ 
         
-        spike_threshold = threshold
-        self.spks, _ = find_peaks(self.V,height=spike_threshold)
+        self.spks = []
+        ref_ind = int(ref/self.dt)
+        t=0
+        while (t<len(self.V)-1) :
+            
+            if (self.V[t] >= threshold and self.V[t-1] <= threshold) :
+                self.spks.append(t)
+                t+=ref_ind
+            t+=1
+                        
         self.spks = np.array(self.spks)
         self.spks_flag = True
-
 
     def detectSpikes(self, threshold=0.0, ref=3.0):
         
@@ -260,10 +276,9 @@ class Trace :
         
         DT_before_i = int(DT_before/self.dt)
         DT_after_i  = int(DT_after/self.dt)
-    
         if self.spks_flag == False :
             self.detectSpikes()
-         
+
                 
         all_spikes = []
         
@@ -276,11 +291,10 @@ class Trace :
                 
                 # Avoid using spikes close to boundaries to avoid errors             
                 if s > DT_before_i  and s < (len(self.V) - DT_after_i) :
-                    all_spikes.append( self.V[ s - DT_before_i : s + DT_after_i ] )
+                    all_spikes.append( self.V[ int(s - DT_before_i) : int(s + DT_after_i) ] )
 
     
         spike_avg = np.mean(all_spikes, axis=0)
-        
         support   = np.linspace(-DT_before, DT_after, len(spike_avg))
         spike_nb  = len(all_spikes)
         

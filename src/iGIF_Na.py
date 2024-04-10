@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scipy import weave
+# from scipy import weave
 from numpy.linalg import inv
 
 from SpikingModel import *
@@ -111,144 +111,216 @@ class iGIF_Na(iGIF) :
     
     
     
-    def simulate(self, I, V0):
+    # def simulate(self, I, V0):
  
-        """
-        Simulate the spiking response of the GIF model to an input current I (nA) with time step dt.
-        V0 indicate the initial condition V(0)=V0.
-        The function returns:
-        - time     : ms, support for V, eta_sum, V_T, spks
-        - V        : mV, membrane potential
-        - eta_sum  : nA, adaptation current
-        - V_T      : mV, firing threshold
-        - spks     : ms, list of spike times 
-        """
+    #     """
+    #     Simulate the spiking response of the GIF model to an input current I (nA) with time step dt.
+    #     V0 indicate the initial condition V(0)=V0.
+    #     The function returns:
+    #     - time     : ms, support for V, eta_sum, V_T, spks
+    #     - V        : mV, membrane potential
+    #     - eta_sum  : nA, adaptation current
+    #     - V_T      : mV, firing threshold
+    #     - spks     : ms, list of spike times 
+    #     """
  
-        # Input parameters
-        p_T         = len(I)
-        p_dt        = self.dt
+    #     # Input parameters
+    #     p_T         = len(I)
+    #     p_dt        = self.dt
         
-        # Model parameters
-        p_gl        = self.gl
-        p_C         = self.C 
-        p_El        = self.El
-        p_Vr        = self.Vr
-        p_Tref      = self.Tref
-        p_Vt_star   = self.Vt_star
-        p_DV        = self.DV
-        p_lambda0   = self.lambda0
+    #     # Model parameters
+    #     p_gl        = self.gl
+    #     p_C         = self.C 
+    #     p_El        = self.El
+    #     p_Vr        = self.Vr
+    #     p_Tref      = self.Tref
+    #     p_Vt_star   = self.Vt_star
+    #     p_DV        = self.DV
+    #     p_lambda0   = self.lambda0
         
-        # Model parameters  definin threshold coupling      
-        p_theta_ka  = self.theta_ka
-        p_theta_ki  = self.theta_ki
-        p_theta_Vi  = self.theta_Vi
-        p_theta_tau = self.theta_tau
+    #     # Model parameters  definin threshold coupling      
+    #     p_theta_ka  = self.theta_ka
+    #     p_theta_ki  = self.theta_ki
+    #     p_theta_Vi  = self.theta_Vi
+    #     p_theta_tau = self.theta_tau
               
         
-        # Model kernels   
-        (p_eta_support, p_eta) = self.eta.getInterpolatedFilter(self.dt)   
-        p_eta       = p_eta.astype('double')
-        p_eta_l     = len(p_eta)
+    #     # Model kernels   
+    #     (p_eta_support, p_eta) = self.eta.getInterpolatedFilter(self.dt)   
+    #     p_eta       = p_eta.astype('double')
+    #     p_eta_l     = len(p_eta)
 
-        (p_gamma_support, p_gamma) = self.gamma.getInterpolatedFilter(self.dt)   
-        p_gamma     = p_gamma.astype('double')
-        p_gamma_l   = len(p_gamma)
+    #     (p_gamma_support, p_gamma) = self.gamma.getInterpolatedFilter(self.dt)   
+    #     p_gamma     = p_gamma.astype('double')
+    #     p_gamma_l   = len(p_gamma)
       
-        # Define arrays
-        V         = np.array(np.zeros(p_T), dtype="double")
-        theta     = np.array(np.zeros(p_T), dtype="double")        
-        I         = np.array(I, dtype="double")
-        spks      = np.array(np.zeros(p_T), dtype="double")                      
-        eta_sum   = np.array(np.zeros(p_T + 2*p_eta_l), dtype="double")
-        gamma_sum = np.array(np.zeros(p_T + 2*p_gamma_l), dtype="double")            
+    #     # Define arrays
+    #     V         = np.array(np.zeros(p_T), dtype="double")
+    #     theta     = np.array(np.zeros(p_T), dtype="double")        
+    #     I         = np.array(I, dtype="double")
+    #     spks      = np.array(np.zeros(p_T), dtype="double")                      
+    #     eta_sum   = np.array(np.zeros(p_T + 2*p_eta_l), dtype="double")
+    #     gamma_sum = np.array(np.zeros(p_T + 2*p_gamma_l), dtype="double")            
  
-        # Set initial condition
-        V[0] = V0
+    #     # Set initial condition
+    #     V[0] = V0
          
-        code =  """
-                #include <math.h>
+    #     code =  """
+    #             #include <math.h>
                 
-                int   T_ind      = int(p_T);                
-                float dt         = float(p_dt); 
+    #             int   T_ind      = int(p_T);                
+    #             float dt         = float(p_dt); 
                 
-                float gl         = float(p_gl);
-                float C          = float(p_C);
-                float El         = float(p_El);
-                float Vr         = float(p_Vr);
-                int   Tref_ind   = int(float(p_Tref)/dt);
-                float Vt_star    = float(p_Vt_star);
-                float DeltaV     = float(p_DV);
-                float lambda0    = float(p_lambda0);
+    #             float gl         = float(p_gl);
+    #             float C          = float(p_C);
+    #             float El         = float(p_El);
+    #             float Vr         = float(p_Vr);
+    #             int   Tref_ind   = int(float(p_Tref)/dt);
+    #             float Vt_star    = float(p_Vt_star);
+    #             float DeltaV     = float(p_DV);
+    #             float lambda0    = float(p_lambda0);
            
-                float theta_ka         = float(p_theta_ka);
-                float theta_ki         = float(p_theta_ki);
-                float theta_Vi         = float(p_theta_Vi);
-                float theta_tau        = float(p_theta_tau);
+    #             float theta_ka         = float(p_theta_ka);
+    #             float theta_ki         = float(p_theta_ki);
+    #             float theta_Vi         = float(p_theta_Vi);
+    #             float theta_tau        = float(p_theta_tau);
               
-                int eta_l        = int(p_eta_l);
-                int gamma_l      = int(p_gamma_l);
+    #             int eta_l        = int(p_eta_l);
+    #             int gamma_l      = int(p_gamma_l);
                                       
-                float rand_max  = float(RAND_MAX); 
-                float p_dontspike = 0.0 ;
-                float lambda = 0.0 ;            
-                float r = 0.0;
+    #             float rand_max  = float(RAND_MAX); 
+    #             float p_dontspike = 0.0 ;
+    #             float lambda = 0.0 ;            
+    #             float r = 0.0;
                 
                                                 
-                for (int t=0; t<T_ind-1; t++) {
+    #             for (int t=0; t<T_ind-1; t++) {
     
     
-                    // INTEGRATE VOLTAGE
-                    V[t+1] = V[t] + dt/C*( -gl*(V[t] - El) + I[t] - eta_sum[t] );
+    #                 // INTEGRATE VOLTAGE
+    #                 V[t+1] = V[t] + dt/C*( -gl*(V[t] - El) + I[t] - eta_sum[t] );
                     
-                    // INTEGRATE THETA                    
-                    theta[t+1] = theta[t] + dt/theta_tau*(-theta[t] + theta_ka*log(1+exp((V[t]-theta_Vi)/theta_ki))); 
+    #                 // INTEGRATE THETA                    
+    #                 theta[t+1] = theta[t] + dt/theta_tau*(-theta[t] + theta_ka*log(1+exp((V[t]-theta_Vi)/theta_ki))); 
             
                
-                    // COMPUTE PROBABILITY OF EMITTING ACTION POTENTIAL
-                    lambda = lambda0*exp( (V[t+1]-Vt_star-gamma_sum[t]-theta[t+1])/DeltaV );
-                    p_dontspike = exp(-lambda*(dt/1000.0));                                  // since lambda0 is in Hz, dt must also be in Hz (this is why dt/1000.0)
+    #                 // COMPUTE PROBABILITY OF EMITTING ACTION POTENTIAL
+    #                 lambda = lambda0*exp( (V[t+1]-Vt_star-gamma_sum[t]-theta[t+1])/DeltaV );
+    #                 p_dontspike = exp(-lambda*(dt/1000.0));                                  // since lambda0 is in Hz, dt must also be in Hz (this is why dt/1000.0)
                           
                           
-                    // PRODUCE SPIKE STOCHASTICALLY
-                    r = rand()/rand_max;
-                    if (r > p_dontspike) {
+    #                 // PRODUCE SPIKE STOCHASTICALLY
+    #                 r = rand()/rand_max;
+    #                 if (r > p_dontspike) {
                                         
-                        if (t+1 < T_ind-1)                
-                            spks[t+1] = 1.0; 
+    #                     if (t+1 < T_ind-1)                
+    #                         spks[t+1] = 1.0; 
                         
-                        t = t + Tref_ind;    
+    #                     t = t + Tref_ind;    
                         
-                        if (t+1 < T_ind-1) 
-                            V[t+1] = Vr;
+    #                     if (t+1 < T_ind-1) 
+    #                         V[t+1] = Vr;
                         
                         
-                        // UPDATE ADAPTATION PROCESSES     
-                        for(int j=0; j<eta_l; j++) 
-                            eta_sum[t+1+j] += p_eta[j]; 
+    #                     // UPDATE ADAPTATION PROCESSES     
+    #                     for(int j=0; j<eta_l; j++) 
+    #                         eta_sum[t+1+j] += p_eta[j]; 
                         
-                        for(int j=0; j<gamma_l; j++) 
-                            gamma_sum[t+1+j] += p_gamma[j] ;  
+    #                     for(int j=0; j<gamma_l; j++) 
+    #                         gamma_sum[t+1+j] += p_gamma[j] ;  
                         
-                    }
+    #                 }
                
-                }
+    #             }
                 
-                """
+    #             """
  
-        vars = [ 'theta', 'p_theta_ka', 'p_theta_ki', 'p_theta_Vi', 'p_theta_tau', 'p_T','p_dt','p_gl','p_C','p_El','p_Vr','p_Tref','p_Vt_star','p_DV','p_lambda0','V','I','p_eta','p_eta_l','eta_sum','p_gamma','gamma_sum','p_gamma_l','spks' ]
+    #     vars = [ 'theta', 'p_theta_ka', 'p_theta_ki', 'p_theta_Vi', 'p_theta_tau', 'p_T','p_dt','p_gl','p_C','p_El','p_Vr','p_Tref','p_Vt_star','p_DV','p_lambda0','V','I','p_eta','p_eta_l','eta_sum','p_gamma','gamma_sum','p_gamma_l','spks' ]
         
-        v = weave.inline(code, vars)
+    #     v = weave.inline(code, vars)
 
-        time = np.arange(p_T)*self.dt
+    #     time = np.arange(p_T)*self.dt
         
-        eta_sum   = eta_sum[:p_T]     
-        V_T = gamma_sum[:p_T] + p_Vt_star + theta[:p_T]
+    #     eta_sum   = eta_sum[:p_T]     
+    #     V_T = gamma_sum[:p_T] + p_Vt_star + theta[:p_T]
      
-        spks = (np.where(spks==1)[0])*self.dt
+    #     spks = (np.where(spks==1)[0])*self.dt
     
-        return (time, V, eta_sum, V_T, spks)
+    #     return (time, V, eta_sum, V_T, spks)
 
         
+
+    def simulate(self,I, V0):
+        p_T = len(I)
+        p_dt = self.dt
+        p_gl = self.gl
+        p_C = self.C
+        p_El = self.El
+        p_Vr = self.Vr
+        p_Tref = self.Tref
+        p_Vt_star = self.Vt_star
+        p_DV = self.DV
+        p_lambda0 = self.lambda0
+        p_theta_ka = self.theta_ka
+        p_theta_ki = self.theta_ki
+        p_theta_Vi = self.theta_Vi
+        p_theta_tau = self.theta_tau
+
+        p_eta_support, p_eta = self.eta.getInterpolatedFilter(self.dt)
+        p_gamma_support, p_gamma = self.gamma.getInterpolatedFilter(self.dt)
+        p_eta = p_eta.astype('double')
+        p_eta_l = len(p_eta)
+        p_gamma = p_gamma.astype('double')
+        p_gamma_l = len(p_gamma)
+
+        V = np.zeros(p_T)
+        theta = np.zeros(p_T)
+        I = np.array(I)
+        spks = np.zeros(p_T)
+        eta_sum = np.zeros(p_T + 2 * p_eta_l)
+        gamma_sum = np.zeros(p_T + 2 * p_gamma_l)
+        V[0] = V0
+
+        @jit(nopython=True)
+        def simulate_inner_loop(V, I, theta, spks, eta_sum, gamma_sum, p_T, p_dt, p_gl, p_C, p_El, p_Vr, p_Tref, p_Vt_star, p_DV, p_lambda0, p_theta_ka, p_theta_ki, p_theta_Vi, p_theta_tau, p_eta, p_eta_l, p_gamma, p_gamma_l):
+            rand_max = np.float64(1.0)  # this is a workaround to avoid numba issues with rand() and rand_max
+            p_Tind = len(I)
+            p_DV = p_DV
+            p_Vt_star = p_Vt_star
+
+            for t in range(p_Tind - 1):
+                V[t + 1] = V[t] + p_dt / p_C * (-p_gl * (V[t] - p_El) + I[t] - eta_sum[t])
+                theta[t + 1] = theta[t] + p_dt / p_theta_tau * (-theta[t] + p_theta_ka * np.log(1 + np.exp((V[t] - p_theta_Vi) / p_theta_ki)))
+
+                lambda_val = p_lambda0 * np.exp((V[t + 1] - p_Vt_star - gamma_sum[t] - theta[t + 1]) / p_DV)
+                p_dontspike = np.exp(-lambda_val * (p_dt / 1000.0))
+
+                r = np.random.rand()
+                if r > p_dontspike:
+                    if t + 1 < p_Tind - 1:
+                        spks[t + 1] = 1.0
+
+                    t += int(p_Tref / p_dt)
+
+                    if t + 1 < p_Tind - 1:
+                        V[t + 1] = p_Vr
+
+                        for j in range(p_eta_l):
+                            eta_sum[t + 1 + j] += p_eta[j]
+
+                        for j in range(p_gamma_l):
+                            gamma_sum[t + 1 + j] += p_gamma[j]
+
+            return V, theta, spks, eta_sum, gamma_sum
+
+        V, theta, spks, eta_sum, gamma_sum = simulate_inner_loop(V, I, theta, spks, eta_sum, gamma_sum, p_T, p_dt, p_gl, p_C, p_El, p_Vr, p_Tref, p_Vt_star, p_DV, p_lambda0, p_theta_ka, p_theta_ki, p_theta_Vi, p_theta_tau, p_eta, p_eta_l, p_gamma, p_gamma_l)
+
+        time = np.arange(p_T) * self.dt
+        eta_sum = eta_sum[:p_T]
+        V_T = gamma_sum[:p_T] + p_Vt_star + theta[:p_T]
+        spks = (np.where(spks == 1)[0]) * self.dt
+
+        return time, V, eta_sum, V_T, spks
          
          
     ######################################################################################################################
@@ -270,9 +342,9 @@ class iGIF_Na(iGIF) :
         - doPlot         : if True plot the max-likelihood as a function of ki and Vi.
         """
              
-        print "\n################################"
-        print "# Fit iGIF_Na"
-        print "################################\n"
+        print("\n################################")
+        print("# Fit iGIF_Na")
+        print("################################\n")
         
         # Three step procedure used for parameters extraction 
         
@@ -295,7 +367,7 @@ class iGIF_Na(iGIF) :
         
         # Fit a dynamic threshold using a initial condition the result obtained by fitting a static threshold
 
-        print "Fit dynamic threshold..."
+        print("Fit dynamic threshold...")
                 
         #beta0_dynamicThreshold = np.concatenate( ( [1/self.DV], [-self.Vt_star/self.DV], [0], self.gamma.getCoefficients()/self.DV))        
         beta0_dynamicThreshold = np.concatenate( ( [1/self.DV], [-self.Vt_star/self.DV], [0], np.zeros(self.gamma.getNbOfBasisFunctions())))        
@@ -315,7 +387,7 @@ class iGIF_Na(iGIF) :
                 ki = ki_all[ki_i]
                 Vi = Vi_all[Vi_i]            
             
-                print "\nTest parameters: ki = %0.2f mV, Vi = %0.2f mV" % (ki, Vi)        
+                print("\nTest parameters: ki = %0.2f mV, Vi = %0.2f mV" % (ki, Vi))        
         
                 # Perform fit        
                 (beta_tmp, L_tmp) = self.maximizeLikelihood_dynamicThreshold(experiment, ki, Vi, beta0_dynamicThreshold)
@@ -324,7 +396,7 @@ class iGIF_Na(iGIF) :
         
                 if L_tmp > L_opt :
                     
-                    print "NEW OPTIMAL SOLUTION: LL = %0.5f (bit/spike)" % (L_tmp)
+                    print("NEW OPTIMAL SOLUTION: LL = %0.5f (bit/spike)" % (L_tmp))
                     
                     L_opt    = L_tmp
                     beta_opt = beta_tmp 
@@ -351,9 +423,9 @@ class iGIF_Na(iGIF) :
             
             (ki_plot,Vi_plot) = np.meshgrid(Vi_all, ki_all)
 
-            print np.shape(ki_plot)
-            print np.shape(Vi_plot)
-            print np.shape(all_L)
+            print(np.shape(ki_plot))
+            print(np.shape(Vi_plot))
+            print(np.shape(all_L))
             
             plt.figure(facecolor='white', figsize=(6,6))
             
@@ -405,7 +477,7 @@ class iGIF_Na(iGIF) :
         
         # Perform gradient ascent
         
-        print "Maximize log-likelihood (bit/spks)..."
+        print("Maximize log-likelihood (bit/spks)...")
                         
         beta = beta0
         old_L = 1
@@ -430,7 +502,7 @@ class iGIF_Na(iGIF) :
                 
             if (i>0 and abs((L-old_L)/old_L) < stopCond) :              # If converged
                 
-                print "\nConverged after %d iterations!\n" % (i+1)
+                print("\nConverged after %d iterations!\n" % (i+1))
                 break
             
             old_L = L
@@ -442,7 +514,7 @@ class iGIF_Na(iGIF) :
             
         
         if (i==maxIter - 1) :                                           # If too many iterations
-            print "\nNot converged after %d iterations.\n" % (maxIter)
+            print("\nNot converged after %d iterations.\n" % (maxIter))
         
         
         return (beta, L_norm)
@@ -492,130 +564,169 @@ class iGIF_Na(iGIF) :
         return (X, X_spikes, sum_X_spikes,  N_spikes, T_l)
  
 
-    def exponentialFiltering_Brette_ref(self, V, spks_ind, ki, Vi):
+    # def exponentialFiltering_Brette_ref(self, V, spks_ind, ki, Vi):
 
-        """
-        Auxiliary function used to compute the matrix Y used in maximum likelihood.
-        This function compute a set of integrals:
+    #     """
+    #     Auxiliary function used to compute the matrix Y used in maximum likelihood.
+    #     This function compute a set of integrals:
         
-        theta_i(t) = \int_0^T 1\tau_theta exp(-s/tau_theta) f{ V(t-s) }ds
+    #     theta_i(t) = \int_0^T 1\tau_theta exp(-s/tau_theta) f{ V(t-s) }ds
         
-        wheref(V) = log( 1 + exp( (V-Vi)/ki) )
+    #     wheref(V) = log( 1 + exp( (V-Vi)/ki) )
         
-        After each spike in spks_ind theta_i(t) is reset to 0 mV and the integration restarts.
+    #     After each spike in spks_ind theta_i(t) is reset to 0 mV and the integration restarts.
         
-        The function returns a matrix where each line is given by theta_i(t).
+    #     The function returns a matrix where each line is given by theta_i(t).
         
-        Input parameters:
+    #     Input parameters:
         
-        - V : numpy array containing the voltage trace (in mV)
-        - spks_ind   : list of spike times in ms (used to reset)
-        - theta_tau  : ms, timescale used in the intergration.
+    #     - V : numpy array containing the voltage trace (in mV)
+    #     - spks_ind   : list of spike times in ms (used to reset)
+    #     - theta_tau  : ms, timescale used in the intergration.
         
-        """
+    #     """
         
-        # Input parameters
-        p_T         = len(V)
-        p_dt        = self.dt
+    #     # Input parameters
+    #     p_T         = len(V)
+    #     p_dt        = self.dt
              
          
-        # Model parameters  definin threshold coupling      
-        p_theta_tau = self.theta_tau
-        p_Tref      = self.Tref
-        p_theta_ki  = ki
-        p_theta_Vi  = Vi
+    #     # Model parameters  definin threshold coupling      
+    #     p_theta_tau = self.theta_tau
+    #     p_Tref      = self.Tref
+    #     p_theta_ki  = ki
+    #     p_theta_Vi  = Vi
 
 
-        # Define arrays
-        V         = np.array(V, dtype="double")
-        theta     = np.array(np.zeros(p_T), dtype="double")        
+    #     # Define arrays
+    #     V         = np.array(V, dtype="double")
+    #     theta     = np.array(np.zeros(p_T), dtype="double")        
         
-        spks      = np.array(spks_ind, dtype='double')
-        p_spks_L  = len(spks)
+    #     spks      = np.array(spks_ind, dtype='double')
+    #     p_spks_L  = len(spks)
          
     
-        code =  """
-                #include <math.h>
+    #     code =  """
+    #             #include <math.h>
                 
-                int   T_ind      = int(p_T);                
-                float dt         = float(p_dt); 
+    #             int   T_ind      = int(p_T);                
+    #             float dt         = float(p_dt); 
                 
-                int   Tref_ind   = int(float(p_Tref)/dt);
-                float theta_ki         = float(p_theta_ki);
-                float theta_Vi         = float(p_theta_Vi);
-                float theta_tau        = float(p_theta_tau);
+    #             int   Tref_ind   = int(float(p_Tref)/dt);
+    #             float theta_ki         = float(p_theta_ki);
+    #             float theta_Vi         = float(p_theta_Vi);
+    #             float theta_tau        = float(p_theta_tau);
               
-                float theta_taufactor = (1.0-dt/theta_tau);                 
+    #             float theta_taufactor = (1.0-dt/theta_tau);                 
                 
-                int spks_L     = int(p_spks_L);  
-                int spks_cnt   = 0;
-                int next_spike = int(spks[0]);
+    #             int spks_L     = int(p_spks_L);  
+    #             int spks_cnt   = 0;
+    #             int next_spike = int(spks[0]);
          
                                                 
-                for (int t=0; t<T_ind-1; t++) {
+    #             for (int t=0; t<T_ind-1; t++) {
                         
-                    // INTEGRATE THETA 
+    #                 // INTEGRATE THETA 
                                        
-                    theta[t+1] = theta[t] + dt/theta_tau*(-theta[t] + log(1+exp((V[t]-theta_Vi)/theta_ki))); 
+    #                 theta[t+1] = theta[t] + dt/theta_tau*(-theta[t] + log(1+exp((V[t]-theta_Vi)/theta_ki))); 
             
              
-                    // MANAGE RESET        
+    #                 // MANAGE RESET        
                     
-                    if ( t+1 >= next_spike ) {                                        
+    #                 if ( t+1 >= next_spike ) {                                        
                    
-                        if(spks_cnt < spks_L) {
-                            spks_cnt  += 1;
-                            next_spike = int(spks[spks_cnt]);
-                        }
-                        else {
-                            next_spike = T_ind+1;
-                        }
+    #                     if(spks_cnt < spks_L) {
+    #                         spks_cnt  += 1;
+    #                         next_spike = int(spks[spks_cnt]);
+    #                     }
+    #                     else {
+    #                         next_spike = T_ind+1;
+    #                     }
                         
                         
-                        if ( t + Tref_ind < T_ind-1 ) { 
-                            theta[t + Tref_ind] = 0.0;                                      
-                        }   
+    #                     if ( t + Tref_ind < T_ind-1 ) { 
+    #                         theta[t + Tref_ind] = 0.0;                                      
+    #                     }   
                           
-                        t = t + Tref_ind; 
+    #                     t = t + Tref_ind; 
                                  
-                    }  
+    #                 }  
                             
-                }
+    #             }
                 
-                """
+    #             """
  
-        vars = [ 'spks', 'p_spks_L', 'theta', 'p_theta_ki', 'p_theta_Vi', 'p_theta_tau', 'p_T','p_dt','p_Tref','V' ]
+    #     vars = [ 'spks', 'p_spks_L', 'theta', 'p_theta_ki', 'p_theta_Vi', 'p_theta_tau', 'p_T','p_dt','p_Tref','V' ]
         
-        v = weave.inline(code, vars)
+    #     v = weave.inline(code, vars)
         
         
-        return theta
+    #     return theta
 
-  
+    def exponential_filtering_brette_refse(self,V, spks_ind, ki, Vi):
+        p_T = len(V)
+        p_dt = self.dt
+        p_Tref = self.Tref
+        p_theta_tau = self.theta_tau
+        p_theta_ki = ki
+        p_theta_Vi = Vi
+
+        V = np.array(V, dtype="double")
+        theta = np.zeros(p_T, dtype="double")
+        spks = np.array(spks_ind, dtype='double')
+        p_spks_L = len(spks)
+
+        @jit(nopython=True)
+        def exponential_filtering_brette_inner_loop(V, theta, spks, p_T, p_Tref, p_dt, p_theta_ki, p_theta_Vi, p_theta_tau, p_spks_L):
+            theta_taufactor = (1.0 - p_dt / p_theta_tau)
+            spks_cnt = 0
+            next_spike = int(spks[0])
+
+            for t in range(p_T - 1):
+                theta[t + 1] = theta[t] + p_dt / p_theta_tau * (-theta[t] + np.log(1 + np.exp((V[t] - p_theta_Vi) / p_theta_ki)))
+
+                if t + 1 >= next_spike:
+                    if spks_cnt < p_spks_L:
+                        spks_cnt += 1
+                        next_spike = int(spks[spks_cnt])
+                    else:
+                        next_spike = p_T + 1
+
+                    if t + p_Tref < p_T - 1:
+                        theta[t + p_Tref] = 0.0
+
+                    t += p_Tref
+
+            return theta
+
+        theta = exponential_filtering_brette_inner_loop(V, theta, spks, p_T, p_Tref, p_dt, p_theta_ki, p_theta_Vi, p_theta_tau, p_spks_L)
+
+        return theta
+    
     ########################################################################################################
     # PLOT AND PRINT FUNCTIONS
     ########################################################################################################     
   
     def printParameters(self):
 
-        print "\n-------------------------"        
-        print "iGIF_Na model parameters:"
-        print "-------------------------"
-        print "tau_m (ms):\t%0.3f"  % (self.C/self.gl)
-        print "R (MOhm):\t%0.3f"    % (1.0/self.gl)
-        print "C (nF):\t\t%0.3f"    % (self.C)
-        print "gl (nS):\t%0.3f"     % (self.gl)
-        print "El (mV):\t%0.3f"     % (self.El)
-        print "Tref (ms):\t%0.3f"   % (self.Tref)
-        print "Vr (mV):\t%0.3f"     % (self.Vr)     
-        print "Vt* (mV):\t%0.3f"    % (self.Vt_star)    
-        print "DV (mV):\t%0.3f"     % (self.DV)  
-        print "tau_theta (ms):\t%0.3f"   % (self.theta_tau)
-        print "ka (mV):\t%0.3f"    % (self.theta_ka)     
-        print "ki (mV):\t%0.3f"    % (self.theta_ki)    
-        print "Vi (mV):\t%0.3f"    % (self.theta_Vi) 
-        print "ka/ki (mV):\t%0.3f" % (self.theta_ka/self.theta_ki)                 
-        print "-------------------------\n"
+        print("\n-------------------------")        
+        print("iGIF_Na model parameters:")
+        print("-------------------------")
+        print("tau_m (ms):\t%0.3f"  % (self.C/self.gl))
+        print("R (MOhm):\t%0.3f"    % (1.0/self.gl))
+        print("C (nF):\t\t%0.3f"    % (self.C))
+        print("gl (nS):\t%0.3f"     % (self.gl))
+        print("El (mV):\t%0.3f"     % (self.El))
+        print("Tref (ms):\t%0.3f"   % (self.Tref))
+        print("Vr (mV):\t%0.3f"     % (self.Vr))     
+        print("Vt* (mV):\t%0.3f"    % (self.Vt_star))    
+        print("DV (mV):\t%0.3f"     % (self.DV))  
+        print("tau_theta (ms):\t%0.3f"   % (self.theta_tau))
+        print("ka (mV):\t%0.3f"    % (self.theta_ka))     
+        print("ki (mV):\t%0.3f"    % (self.theta_ki))    
+        print("Vi (mV):\t%0.3f"    % (self.theta_Vi)) 
+        print("ka/ki (mV):\t%0.3f" % (self.theta_ka/self.theta_ki))                 
+        print("-------------------------\n")
     
     
     def plotParameters(self) :

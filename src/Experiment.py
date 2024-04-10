@@ -18,14 +18,15 @@ class Experiment :
     Objects of this class have an AEC object that can be used to perform Active Electrode Compensation for data preprocessing.
     """
     
-    def __init__(self, name, dt):
+    def __init__(self, name, dt,print_log=False):
         
         """
         Name: string, name of the experiment
         dt: experimental time step (in ms). That is, 1/sampling frequency.
         """
-        
-        print("Create a new Experiment")
+        self.print_log=print_log
+        if self.print_log:
+            print("Create a new Experiment")
 
         self.name               = name          # Experiment name
         
@@ -72,8 +73,8 @@ class Experiment :
         For Igor Pro files use 'Igor'. In this case V and I must contain path and filename of the file in which the data are stored.
         For numpy Array data use "Array". In this case V and I must be numpy arrays 
         """
-    
-        print("Set AEC trace...")
+        if self.print_log:
+            print("Set AEC trace...")
         trace_tmp = Trace( V, V_units, I, I_units, T, self.dt, FILETYPE=FILETYPE)
         self.AEC_trace = trace_tmp
 
@@ -94,8 +95,8 @@ class Experiment :
         For Igor Pro files use 'Igor'. In this case V and I must contain path and filename of the file in which the data are stored.
         For numpy Array data use "Array". In this case V and I must be numpy arrays 
         """
-        
-        print("Add Training Set trace...")
+        if self.print_log:
+            print("Add Training Set trace...")
         trace_tmp = Trace( V, V_units, I, I_units, T, self.dt, FILETYPE=FILETYPE)
         self.trainingset_traces.append( trace_tmp )
 
@@ -116,8 +117,8 @@ class Experiment :
         For Igor Pro files use 'Igor'. In this case V and I must contain path and filename of the file in which the data are stored.
         For numpy Array data use "Array". In this case V and I must be numpy arrays 
         """
-   
-        print("Add Test Set trace...")
+        if self.print_log:
+           print("Add Test Set trace...")
         trace_tmp = Trace( V, V_units, I, I_units, T, self.dt, FILETYPE=FILETYPE)    
         self.testset_traces.append( trace_tmp )
 

@@ -75,7 +75,7 @@ myExp.performAEC()
 
 # Create a new object GIF 
 myGIF = GIF(0.1)
-
+myGIF.print_log=True
 # Define parameters
 myGIF.Tref = 4.0  
 
@@ -92,7 +92,7 @@ myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=5.0, binsize_ub=1000.0, s
 myExp.trainingset_traces[0].setROI([[0,100000.0]])
 
 # To visualize the training set and the ROI call again
-myExp.detectSpikes_python()
+# myExp.detectSpikes_python()
 # myExp.plotTrainingSet()
 
 # Perform the fit
@@ -107,8 +107,7 @@ V_exp = myExp.trainingset_traces[0].V
 spks =myExp.trainingset_traces[0].spks/10
 (time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
 
-
-def get_gamma_factor(model, data, delta, time, dt, rate_correction=True):
+def get_gamma_factor(modelspks, dataspks, delta, time, dt, rate_correction=True):
     """
     Calculate gamma factor between model and target spike trains,
     with precision delta.
@@ -130,26 +129,12 @@ def get_gamma_factor(model, data, delta, time, dt, rate_correction=True):
         rate, following `Clopath et al., Neurocomputing (2007)
         <https://doi.org/10.1016/j.neucom.2006.10.047>`_.
 
-    Returns
-    -------
-    float
-        An error based on the Gamma factor. If ``rate_correction`` is used,
-        then the returned error is :math:`1 + 2\frac{\lvert r_\mathrm{data} - r_\mathrm{model}\rvert}{r_\mathrm{data}} - \Gamma`
-        (with :math:`r_\mathrm{data}` and :math:`r_\mathrm{model}` being the
-        firing rates in the data/model, and :math:`\Gamma` the coincidence
-        factor). Without ``rate_correction``, the error is
-        :math:`1 - \Gamma`. Note that the coincidence factor :math:`\Gamma`
-        has a maximum value of 1 (when the two spike trains are exactly
-        identical) and a value of 0 if there are only as many coincidences
-        as expected from two homogeneous Poisson processes of the same rate.
-        It can also take negative values if there are fewer coincidences
-        than expected by chance.
     """
-    model = np.array(model)
-    data = np.array(data)
+    model = np.array(modelspks)
+    data = np.array(dataspks)
 
-    model = np.array(model / dt, dtype=np.int32)
-    data = np.array(data / dt, dtype=np.int32)
+    model = np.array(np.int32(model / dt), dtype=int)
+    data = np.array(np.int32(data / dt), dtype=int)
     delta_diff = int(np.int32(delta / dt))
 
     model_length = len(model)
@@ -161,9 +146,9 @@ def get_gamma_factor(model, data, delta, time, dt, rate_correction=True):
     if model_length > 1:
         bins = .5 * (model[1:] + model[:-1])
         indices = np.digitize(data, bins)
-        diff = abs(data - model[indices])
+        diff = np.abs(data - model[indices])
         matched_spikes = (diff <= delta_diff)
-        coincidences = sum(matched_spikes)
+        coincidences = np.sum(matched_spikes)
     elif model_length == 0:
         coincidences = 0
     else:
@@ -171,16 +156,17 @@ def get_gamma_factor(model, data, delta, time, dt, rate_correction=True):
         coincidences = sum(indices)
 
     # Normalization of the coincidences count
-    NCoincAvg = 2 * data_rate * delta * model_length  #2*v2*p*N1
-    norm = .5*(1 - 2 * max(data_rate,model_rate) * delta)
+    NCoincAvg = 2 * delta * data_length * data_rate
+    norm = .5*(1 - 2 * data_rate * delta)
     gamma = (coincidences - NCoincAvg)/(norm*(model_length + data_length))
 
     if rate_correction:
-        rate_term = 1 + 2*abs((data_rate - model_rate)/data_rate)
+        rate_term = 1 + 2*np.abs((data_rate - model_rate)/data_rate)
     else:
         rate_term = 1
-    return gamma
-    # return np.clip(rate_term - gamma, 0, np.inf)
+    # return gamma
+
+    return np.clip(rate_term - gamma, 0, np.inf)
 
 def getBinarySpikeTrain(V,spikes,dt,type='zero'):
     spikeinds  = np.int32(spikes/dt)
@@ -191,17 +177,18 @@ def getBinarySpikeTrain(V,spikes,dt,type='zero'):
         b_spikes = np.zeros(len(V))*np.nan
     b_spikes[spikeinds] =1
     return b_spikes
+
 spks_model = getBinarySpikeTrain(V,S,0.1,type='nan')
 spks_data = getBinarySpikeTrain(V_exp,spks,0.1,type='nan')
-print('gamma:',get_gamma_factor(S,spks,4,len(V)*0.1,0.1))
+print('gamma:',get_gamma_factor(S/1000,spks/1000,4/1000,len(V)/10000,1/10000))
 
-# plot_time = 1 # s
-# plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
-# plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
-# plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
-# plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
-# plt.legend(loc='lower left')
-# plt.show()
+plot_time = 1 # s
+plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
+plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
+plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+plt.legend(loc='lower left')
+plt.show()
 
 
 
@@ -234,25 +221,25 @@ print('gamma:',get_gamma_factor(S,spks,4,len(V)*0.1,0.1))
 
 ## Reload the model
 #myGIF = GIF.load('./myGIF.pck')
-#
-## Generate OU process with temporal correlation 3 ms and mean modulated by a sinusoildal function of 1 Hz
-#I_OU = Tools.generateOUprocess_sinMean(f=1.0, T=5000.0, tau=3.0, mu=0.3, delta_mu=0.5, sigma=0.1, dt=0.1)
-#
-## Simulate the model with the I_OU current. Use the reversal potential El as initial condition (i.e., V(t=0)=El)
-#(time, V, I_a, V_t, S) = myGIF.simulate(I_OU, myGIF.El)
-#
-## Plot the results of the simulation
-#plt.figure(figsize=(14,5), facecolor='white')
-#plt.subplot(2,1,1)
-#plt.plot(time, I_OU, 'gray')
-#plt.ylabel('I (nA)')
-#plt.subplot(2,1,2)
-#plt.plot(time, V,'black', label='V')
-#plt.plot(time, V_t,'red', label='V threshold')
-#plt.ylabel('V (mV)')
-#plt.xlabel('Time (ms)')
-#plt.legend()
-#plt.show()
+
+# # Generate OU process with temporal correlation 3 ms and mean modulated by a sinusoildal function of 1 Hz
+# I_OU = Tools.generateOUprocess_sinMean(f=1.0, T=5000.0, tau=3.0, mu=0.3, delta_mu=0.5, sigma=0.1, dt=0.1)
+
+# # Simulate the model with the I_OU current. Use the reversal potential El as initial condition (i.e., V(t=0)=El)
+# (time, V, I_a, V_t, S) = myGIF.simulate(I_OU, myGIF.El)
+
+# # Plot the results of the simulation
+# plt.figure(figsize=(14,5), facecolor='white')
+# plt.subplot(2,1,1)
+# plt.plot(time, I_OU, 'gray')
+# plt.ylabel('I (nA)')
+# plt.subplot(2,1,2)
+# plt.plot(time, V,'black', label='V')
+# plt.plot(time, V_t,'red', label='V threshold')
+# plt.ylabel('V (mV)')
+# plt.xlabel('Time (ms)')
+# plt.legend()
+# plt.show()
 
 
 
