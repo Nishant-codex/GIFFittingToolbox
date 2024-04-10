@@ -6,7 +6,7 @@ import Tools
 from Filter import *
 
 
-class Filter_Rect(Filter) :
+class Filter_Rect(Filter, metaclass=abc.ABCMeta) :
 
     """
     Abstract class for filters defined as linear combinations of rectangular basis functions.
@@ -20,8 +20,6 @@ class Filter_Rect(Filter) :
     Possible implementations could be e.g. linear spacing, log spacing, arbitrary spacing.
     To implement such filters, inherit from Filter_Rect
     """
-
-    __metaclass__  = abc.ABCMeta
     
 
     def __init__(self):
@@ -88,7 +86,7 @@ class Filter_Rect(Filter) :
         
         else :
             
-            print "Error: value of the filter coefficients does not match the number of basis functions!"
+            print("Error: value of the filter coefficients does not match the number of basis functions!")
 
 
     ###################################################################################

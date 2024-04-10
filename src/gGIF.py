@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scipy import weave
+import weave as weave
 from numpy.linalg import inv
 
 from ThresholdModel import *
@@ -195,7 +195,7 @@ class gGIF(GIF) :
         - eta_sum  : nA, adaptation current
         """
  
-        print "simulate deterministic gGIF"
+        print("simulate deterministic gGIF")
  
         # Input parameters
         p_T          = len(I)
@@ -309,9 +309,9 @@ class gGIF(GIF) :
         
         # Three step procedure used for parameters extraction 
         
-        print "\n################################"
-        print "# Fit gGIF"
-        print "################################\n"
+        print("\n################################")
+        print("# Fit gGIF")
+        print("################################\n")
         
         self.fitVoltageReset(experiment, self.Tref, do_plot=False)
         
@@ -328,7 +328,7 @@ class gGIF(GIF) :
 
     def fitSubthresholdDynamics(self, experiment, Ek_all, DT_beforeSpike=5.0, do_plot=False):
                     
-        print "\ngGIF MODEL - Fit subthreshold dynamics..." 
+        print("\ngGIF MODEL - Fit subthreshold dynamics...") 
            
         var_explained_dV_all = []   
         b_all = []
@@ -336,7 +336,7 @@ class gGIF(GIF) :
         
         for Ek in Ek_all :
         
-            print "\nTest Ek = %0.2f mV..." % (Ek)
+            print("\nTest Ek = %0.2f mV..." % (Ek))
         
             # Expand eta in basis functions
             self.dt = experiment.dt
@@ -371,11 +371,11 @@ class gGIF(GIF) :
                 Y = np.concatenate(Y, axis=0)
             
             else :
-                print "\nError, at least one training set trace should be selected to perform fit."
+                print("\nError, at least one training set trace should be selected to perform fit.")
             
             
             # Linear Regression
-            print "\nPerform linear regression..."
+            print("\nPerform linear regression...")
             XTX     = np.dot(np.transpose(X), X)
             XTX_inv = inv(XTX)
             XTY     = np.dot(np.transpose(X), Y)
@@ -385,7 +385,7 @@ class gGIF(GIF) :
       
             # Compute percentage of variance explained on dV/dt
             var_explained_dV = 1.0 - np.mean((Y - np.dot(X,b))**2)/np.var(Y)
-            print "Done! Percentage of variance explained (on dV/dt): %0.2f" % (var_explained_dV*100.0)
+            print("Done! Percentage of variance explained (on dV/dt): %0.2f" % (var_explained_dV*100.0))
     
             # Save results    
             var_explained_dV_all.append(var_explained_dV)
@@ -431,8 +431,8 @@ class gGIF(GIF) :
                 
         var_explained_V = 1.0 - SSE / VAR
         
-        print "Percentage of variance explained (on V): %0.2f" % (var_explained_V*100.0)
-        print "Percentage of variance explained (on dV/dt): %0.2f" % (var_explained_dV*100.0)
+        print("Percentage of variance explained (on V): %0.2f" % (var_explained_V*100.0))
+        print("Percentage of variance explained (on dV/dt): %0.2f" % (var_explained_dV*100.0))
     
 
         if do_plot :
@@ -488,17 +488,17 @@ class gGIF(GIF) :
     
     def printParameters(self):
 
-        print "\n-------------------------"        
-        print "gGIF model parameters:"
-        print "-------------------------"
-        print "tau_m (ms):\t%0.3f"  % (self.C/self.gl)
-        print "R (MOhm):\t%0.9f"    % (1.0/self.gl)
-        print "C (nF):\t\t%0.3f"    % (self.C)
-        print "gl (nS):\t%0.3f"     % (self.gl)
-        print "El (mV):\t%0.3f"     % (self.El)
-        print "Ek (mV):\t%0.3f"     % (self.Ek)
-        print "Tref (ms):\t%0.3f"   % (self.Tref)
-        print "Vr (mV):\t%0.3f"     % (self.Vr)     
-        print "Vt* (mV):\t%0.3f"    % (self.Vt_star)    
-        print "DV (mV):\t%0.3f"     % (self.DV)          
-        print "-------------------------\n"
+        print("\n-------------------------")        
+        print("gGIF model parameters:")
+        print("-------------------------")
+        print("tau_m (ms):\t%0.3f"  % (self.C/self.gl))
+        print("R (MOhm):\t%0.9f"    % (1.0/self.gl))
+        print("C (nF):\t\t%0.3f"    % (self.C))
+        print("gl (nS):\t%0.3f"     % (self.gl))
+        print("El (mV):\t%0.3f"     % (self.El))
+        print("Ek (mV):\t%0.3f"     % (self.Ek))
+        print("Tref (ms):\t%0.3f"   % (self.Tref))
+        print("Vr (mV):\t%0.3f"     % (self.Vr))     
+        print("Vt* (mV):\t%0.3f"    % (self.Vt_star))    
+        print("DV (mV):\t%0.3f"     % (self.DV))          
+        print("-------------------------\n")

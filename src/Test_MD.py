@@ -22,7 +22,7 @@ for model_stochasticity in model_stochasticity_all :
         s_data = []
         s_model = []
     
-        print "Model stochasticity: ", model_stochasticity
+        print("Model stochasticity: ", model_stochasticity)
     
         for i in np.arange(3) :
             

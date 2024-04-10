@@ -104,7 +104,6 @@ class Filter_Rect_LogSpaced(Filter_Rect) :
         spks_i = Tools.timeToIndex(spks, dt)
  
         nb_bins = self.getNbOfBasisFunctions()
-        
         X = np.zeros( (T_i, nb_bins) )
         
         # Fill matrix
@@ -119,7 +118,7 @@ class Filter_Rect_LogSpaced(Filter_Rect) :
             
             X[:,l] = tmp[:T_i]
         
-        
+        print(X.shape)
         return X
     
     
@@ -133,17 +132,17 @@ class Filter_Rect_LogSpaced(Filter_Rect) :
         
         bins_i  = Tools.timeToIndex(self.bins, dt)                
         bins_l  = self.getNbOfBasisFunctions()
-        
+        # print(bins_i)
         X = np.zeros( (T_i, bins_l) )
         I_tmp = np.array(I,dtype='float64')        
         
         # Fill matrix
         for l in np.arange(bins_l) :
-            
             window = np.ones( bins_i[l+1] - bins_i[l])
             window = np.array(window,dtype='float64')  
-        
+
             F_star_I = fftconvolve(window, I_tmp, mode='full')*dt
+            
             F_star_I = F_star_I[: int(len(I))]        
         
             F_star_I_shifted = np.concatenate( ( np.zeros( int(bins_i[l]) ), F_star_I) )

@@ -13,7 +13,7 @@ class AEC_Dummy(AEC) :
     
     def performAEC(self, experiment):
 
-        print "\nDO NOT PERFORM ACTIVE ELECTRODE COMPENSATION..."
+        print("\nDO NOT PERFORM ACTIVE ELECTRODE COMPENSATION...")
 
         if experiment.AEC_trace != 0 :
             
@@ -31,10 +31,10 @@ class AEC_Dummy(AEC) :
             tr.AEC_flag = True   
             tr.detectSpikes()   
                  
-        print "Done!"
+        print("Done!")
     
     
     def plot(self):
            
-        print "Dummy AEC does not use filters. Nothing to plot."
+        print("Dummy AEC does not use filters. Nothing to plot.")
         

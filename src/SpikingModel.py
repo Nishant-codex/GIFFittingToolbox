@@ -1,12 +1,12 @@
 import abc
 
 import numpy as np
-import cPickle as pkl
+import pickle as pkl
 
 import Tools
 
 
-class SpikingModel :
+class SpikingModel(metaclass=abc.ABCMeta) :
 
     """
     Abstract class defining an interface for a Spiking Neuron Model, a model that produces spikes.
@@ -14,8 +14,6 @@ class SpikingModel :
     To create a new model that explicitly describe the membrane potential and the voltage threshold,
     see the class ThreshodlModel.
     """
-    
-    __metaclass__  = abc.ABCMeta
     
     
     @abc.abstractmethod
@@ -68,20 +66,20 @@ class SpikingModel :
     ############################################################################################
     def save(self, path):
           
-        print "Saving: " + path + "..."        
+        print("Saving: " + path + "...")        
         f = open(path,'w')
         pkl.dump(self, f)
-        print "Done!"
+        print("Done!")
         
         
     @classmethod
     def load(cls, path):
         
-        print "Load spiking model: " + path + "..."        
+        print("Load spiking model: " + path + "...")        
       
         f = open(path,'r')
         model = pkl.load(f)
     
-        print "Done!" 
+        print("Done!") 
            
         return model 

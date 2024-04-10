@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scipy import weave
-
+# import weave as weave
 import ReadIBW
+from neo import io
 
-
+from scipy.signal import find_peaks
 
 class Trace :
 
@@ -43,12 +43,10 @@ class Trace :
         # LOAD EXPERIMENTAL DATA FROM IGOR FILE (V AND I SHOULD COTAIN PATH OF DATA FILES)
         if FILETYPE=='Igor' :
                         
-            V_rec       = ReadIBW.read(V)
-            self.V_rec  = np.array(V_rec[:int(T/self.dt)])*V_units/10**-3        # convert voltage trace to mV
-                        
-            I           = ReadIBW.read(I)
-            self.I     = np.array(I[:int(T/self.dt)])*I_units/10**-9             # convert input current trace to nA  
-
+            V_rec       = io.IgorIO(V).read_analogsignal() #ReadIBW.read(V)
+            self.V_rec  = np.array(V_rec[:int(T/self.dt)])[:,0]*V_units/10**-3        # convert voltage trace to mV
+            I           = io.IgorIO(I).read_analogsignal()
+            self.I      = np.array(I[:int(T/self.dt)])[:,0]*I_units/10**-9             # convert input current trace to nA  
 
         # LOAD EXPERIMENTAL DATA FROM VECTOR (V AND I SHOULD COTAIN ARRAYS OR LISTS)
 
@@ -192,16 +190,8 @@ class Trace :
         To avoid multiple detection of same spike due to noise, use an 'absolute refractory period' ref, in ms.
         """ 
         
-        self.spks = []
-        ref_ind = int(ref/self.dt)
-        t=0
-        while (t<len(self.V)-1) :
-            
-            if (self.V[t] >= threshold and self.V[t-1] <= threshold) :
-                self.spks.append(t)
-                t+=ref_ind
-            t+=1
-                        
+        spike_threshold = threshold
+        self.spks, _ = find_peaks(self.V,height=spike_threshold)
         self.spks = np.array(self.spks)
         self.spks_flag = True
 

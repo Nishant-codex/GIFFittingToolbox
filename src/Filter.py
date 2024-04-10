@@ -10,7 +10,7 @@ from scipy.signal import fftconvolve
 from scipy.optimize import leastsq
 
 
-class Filter :
+class Filter(metaclass=abc.ABCMeta) :
 
     """
     Abstract class defining an interface for a linear filter defined as a linear combination of basis functions {f_j(t)}.
@@ -28,8 +28,6 @@ class Filter :
     Depending on the circumstances different basis functions can be used (e.g., rectangular lin-spaced, rectangular log-spaced).
     Note that this class does provide an implementation of basis functions. To do that, inherit from Filter and implement the abstract methods.   
     """
-    
-    __metaclass__  = abc.ABCMeta
     
 
     def __init__(self):
@@ -78,7 +76,7 @@ class Filter :
         
         else :
             
-            print "Error, the number of coefficients do not match the number of basis functions!"
+            print("Error, the number of coefficients do not match the number of basis functions!")
        
 
     def getCoefficients(self) :
@@ -120,7 +118,7 @@ class Filter :
             return (t, F_exp)
 
         else :        
-            print "Exp filter has not been performed."
+            print("Exp filter has not been performed.")
     
       
     def computeIntegral(self, dt):
@@ -143,6 +141,9 @@ class Filter :
     
         # Compute filtered input      
         I_tmp    = np.array(I,dtype='float64')
+        print('I_tmp', I_tmp.shape)
+        print('F',F.shape)
+
         F_star_I = fftconvolve(F, I_tmp, mode='full')*dt
         F_star_I = F_star_I[: int(len(I))]        
         
@@ -404,4 +405,5 @@ class Filter :
     
     
     
+
 

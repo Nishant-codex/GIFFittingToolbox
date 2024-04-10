@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/src/')
 
 import matplotlib.pyplot as plt
 import copy
@@ -32,7 +32,7 @@ This script fit 2  models on the same experimental data:
 
 myExp = Experiment('Experiment 1', 0.1)
 
-PATH = '../../data/gif_test/'
+PATH = 'C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/data/gif_test/'
 
 # Load AEC data
 myExp.setAECTrace(PATH + 'Cell3_Ger1Elec_ch2_1007.ibw', 1.0, PATH + 'Cell3_Ger1Elec_ch3_1007.ibw', 1.0, 10000.0, FILETYPE='Igor')
@@ -141,4 +141,5 @@ for i in np.arange(len(models)) :
     # plot raster   
     
     prediction.plotRaster(delta=1000.0) 
+
 

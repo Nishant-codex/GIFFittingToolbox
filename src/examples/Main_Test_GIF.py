@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/src')
 
 from Experiment import *
 from AEC_Badel import *
@@ -20,7 +20,7 @@ More instructions are provided on the website.
 ############################################################################################################
 myExp = Experiment('Experiment 1', 0.1)
 
-PATH = '../../data/gif_test/'
+PATH = 'C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/data/gif_test/'
 
 # Load AEC data
 myExp.setAECTrace(PATH + 'Cell3_Ger1Elec_ch2_1007.ibw', 1.0, PATH + 'Cell3_Ger1Elec_ch3_1007.ibw', 1.0, 10000.0, FILETYPE='Igor')
@@ -60,13 +60,13 @@ myAEC.p_nbRep = 15
 myExp.setAEC(myAEC)  
 myExp.performAEC()  
 
-# Plot AEC filters (Kopt and Ke)
-myAEC.plotKopt()
-myAEC.plotKe()
+# # Plot AEC filters (Kopt and Ke)
+# myAEC.plotKopt()
+# myAEC.plotKe()
 
-# Plot training and test set
-myExp.plotTrainingSet()
-myExp.plotTestSet()
+# # Plot training and test set
+# myExp.plotTrainingSet()
+# myExp.plotTestSet()
 
 
 ############################################################################################################
@@ -86,18 +86,143 @@ myGIF.eta.setMetaParameters(length=500.0, binsize_lb=2.0, binsize_ub=1000.0, slo
 myGIF.gamma = Filter_Rect_LogSpaced()
 myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=5.0, binsize_ub=1000.0, slope=5.0)
 
+
+
 # Define the ROI of the training set to be used for the fit (in this example we will use only the first 100 s)
 myExp.trainingset_traces[0].setROI([[0,100000.0]])
 
 # To visualize the training set and the ROI call again
-myExp.plotTrainingSet()
+myExp.detectSpikes_python()
+# myExp.plotTrainingSet()
 
 # Perform the fit
 myGIF.fit(myExp, DT_beforeSpike=5.0)
 
 # Plot the model parameters
 myGIF.printParameters()
-myGIF.plotParameters()   
+# myGIF.plotParameters()   
+
+I = myExp.trainingset_traces[0].I
+V_exp = myExp.trainingset_traces[0].V
+spks =myExp.trainingset_traces[0].spks/10
+(time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
+
+
+def get_gamma_factor(model, data, delta, time, dt, rate_correction=True):
+    """
+    Calculate gamma factor between model and target spike trains,
+    with precision delta.
+
+    Parameters
+    ----------
+    model: `list` or `~numpy.ndarray`
+        model trace
+    data: `list` or `~numpy.ndarray`
+        data trace
+    delta: `~brian2.units.fundamentalunits.Quantity`
+        time window
+    dt: `~brian2.units.fundamentalunits.Quantity`
+        time step
+    time: `~brian2.units.fundamentalunits.Quantity`
+        total time of the simulation
+    rate_correction: bool
+        Whether to include an error term that penalizes differences in firing
+        rate, following `Clopath et al., Neurocomputing (2007)
+        <https://doi.org/10.1016/j.neucom.2006.10.047>`_.
+
+    Returns
+    -------
+    float
+        An error based on the Gamma factor. If ``rate_correction`` is used,
+        then the returned error is :math:`1 + 2\frac{\lvert r_\mathrm{data} - r_\mathrm{model}\rvert}{r_\mathrm{data}} - \Gamma`
+        (with :math:`r_\mathrm{data}` and :math:`r_\mathrm{model}` being the
+        firing rates in the data/model, and :math:`\Gamma` the coincidence
+        factor). Without ``rate_correction``, the error is
+        :math:`1 - \Gamma`. Note that the coincidence factor :math:`\Gamma`
+        has a maximum value of 1 (when the two spike trains are exactly
+        identical) and a value of 0 if there are only as many coincidences
+        as expected from two homogeneous Poisson processes of the same rate.
+        It can also take negative values if there are fewer coincidences
+        than expected by chance.
+    """
+    model = np.array(model)
+    data = np.array(data)
+
+    model = np.array(model / dt, dtype=np.int32)
+    data = np.array(data / dt, dtype=np.int32)
+    delta_diff = int(np.int32(delta / dt))
+
+    model_length = len(model)
+    data_length = len(data)
+    # data_rate = firing_rate(data) * Hz
+    data_rate = data_length / time
+    model_rate = model_length / time
+
+    if model_length > 1:
+        bins = .5 * (model[1:] + model[:-1])
+        indices = np.digitize(data, bins)
+        diff = abs(data - model[indices])
+        matched_spikes = (diff <= delta_diff)
+        coincidences = sum(matched_spikes)
+    elif model_length == 0:
+        coincidences = 0
+    else:
+        indices = [np.amin(abs(model - data[i])) <= delta_diff for i in np.arange(data_length)]
+        coincidences = sum(indices)
+
+    # Normalization of the coincidences count
+    NCoincAvg = 2 * data_rate * delta * model_length  #2*v2*p*N1
+    norm = .5*(1 - 2 * max(data_rate,model_rate) * delta)
+    gamma = (coincidences - NCoincAvg)/(norm*(model_length + data_length))
+
+    if rate_correction:
+        rate_term = 1 + 2*abs((data_rate - model_rate)/data_rate)
+    else:
+        rate_term = 1
+    return gamma
+    # return np.clip(rate_term - gamma, 0, np.inf)
+
+def getBinarySpikeTrain(V,spikes,dt,type='zero'):
+    spikeinds  = np.int32(spikes/dt)
+    if type=='zero':
+        b_spikes = np.zeros(len(V))
+
+    else:
+        b_spikes = np.zeros(len(V))*np.nan
+    b_spikes[spikeinds] =1
+    return b_spikes
+spks_model = getBinarySpikeTrain(V,S,0.1,type='nan')
+spks_data = getBinarySpikeTrain(V_exp,spks,0.1,type='nan')
+print('gamma:',get_gamma_factor(S,spks,4,len(V)*0.1,0.1))
+
+# plot_time = 1 # s
+# plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
+# plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
+# plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+# plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+# plt.legend(loc='lower left')
+# plt.show()
+
+
+
+# plot_time = 5 # s
+# plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
+# plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
+# plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+# plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+# plt.legend(loc='lower left')
+# plt.show()
+
+
+# plot_time = 100 # s
+# plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
+# plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
+# plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+# plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+# plt.legend(loc='lower left')
+# plt.show()
+
+
 
 ## Save the model
 #myGIF.save('./myGIF.pck')
@@ -136,13 +261,14 @@ myGIF.plotParameters()
 ############################################################################################################
 
 # Use the myGIF model to predict the spiking data of the test data set in myExp
-myPrediction = myExp.predictSpikes(myGIF, nb_rep=500)
 
-# Compute Md* with a temporal precision of +/- 4ms
-Md = myPrediction.computeMD_Kistler(4.0, 0.1)    
+# myPrediction = myExp.predictSpikes(myGIF, nb_rep=500)
 
-# Plot data vs model prediction
-myPrediction.plotRaster(delta=1000.0) 
+# # Compute Md* with a temporal precision of +/- 4ms
+# Md = myPrediction.computeMD_Kistler(4.0, 0.1)    
+
+# # Plot data vs model prediction
+# myPrediction.plotRaster(delta=1000.0) 
 
 
 

@@ -17,7 +17,7 @@
 # the technical notes linked above. 
 
 import struct
-from time import clock
+# from time import clock
 import numpy
 
 def flatten(tup):

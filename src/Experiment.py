@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import cPickle as pkl
+import pickle as pkl
 
 from SpikeTrainComparator import *
 from SpikingModel import *
@@ -25,7 +25,7 @@ class Experiment :
         dt: experimental time step (in ms). That is, 1/sampling frequency.
         """
         
-        print "Create a new Experiment"
+        print("Create a new Experiment")
 
         self.name               = name          # Experiment name
         
@@ -73,7 +73,7 @@ class Experiment :
         For numpy Array data use "Array". In this case V and I must be numpy arrays 
         """
     
-        print "Set AEC trace..."
+        print("Set AEC trace...")
         trace_tmp = Trace( V, V_units, I, I_units, T, self.dt, FILETYPE=FILETYPE)
         self.AEC_trace = trace_tmp
 
@@ -95,7 +95,7 @@ class Experiment :
         For numpy Array data use "Array". In this case V and I must be numpy arrays 
         """
         
-        print "Add Training Set trace..."
+        print("Add Training Set trace...")
         trace_tmp = Trace( V, V_units, I, I_units, T, self.dt, FILETYPE=FILETYPE)
         self.trainingset_traces.append( trace_tmp )
 
@@ -117,7 +117,7 @@ class Experiment :
         For numpy Array data use "Array". In this case V and I must be numpy arrays 
         """
    
-        print "Add Test Set trace..."
+        print("Add Test Set trace...")
         trace_tmp = Trace( V, V_units, I, I_units, T, self.dt, FILETYPE=FILETYPE)    
         self.testset_traces.append( trace_tmp )
 
@@ -154,10 +154,10 @@ class Experiment :
         
         filename = path + "/Experiment_" + self.name + '.pkl'
         
-        print "Saving: " + filename + "..."        
+        print("Saving: " + filename + "...")        
         f = open(filename,'w')
         pkl.dump(self, f)
-        print "Done!"
+        print("Done!")
         
         
     @classmethod
@@ -167,12 +167,12 @@ class Experiment :
         Load experiment from file.
         """
         
-        print "Load experiment: " + filename + "..."        
+        print("Load experiment: " + filename + "...")        
       
         f = open(filename,'r')
         expr = pkl.load(f)
     
-        print "Done!" 
+        print("Done!") 
            
         return expr      
       
@@ -211,10 +211,10 @@ class Experiment :
         
         all_spks_times_prediction = []
         
-        print "Predict spike times..."
+        print("Predict spike times...")
         
         for rep in np.arange(nb_rep) :
-            print "Progress: %2.1f %% \r" % (100*(rep+1)/nb_rep),
+            print("Progress: %2.1f %% \r" % (100*(rep+1)/nb_rep), end=' ')
             spks_times = spiking_model.simulateSpikingResponse(I_test, self.dt)
             all_spks_times_prediction.append(spks_times)
         
@@ -236,7 +236,7 @@ class Experiment :
         Python implementation (to speed up, use the function detectSpikes implemented in C).
         """
 
-        print "Detect spikes!"
+        print("Detect spikes!")
                 
         self.spikeDetection_threshold = threshold   
         self.spikeDetection_ref = ref         
@@ -250,7 +250,7 @@ class Experiment :
         for tr in self.testset_traces :
             tr.detectSpikes_python(self.spikeDetection_threshold, self.spikeDetection_ref)         
         
-        print "Done!"
+        print("Done!")
         
         
     def detectSpikes(self, threshold=0.0, ref=3.0):
@@ -260,7 +260,7 @@ class Experiment :
         C implementation.
         """
 
-        print "Detect spikes!"
+        print("Detect spikes!")
                 
         self.spikeDetection_threshold = threshold   
         self.spikeDetection_ref = ref         
@@ -274,7 +274,7 @@ class Experiment :
         for tr in self.testset_traces :
             tr.detectSpikes(self.spikeDetection_threshold, self.spikeDetection_ref)         
         
-        print "Done!"
+        print("Done!")
     
     
     def getTrainingSetNb(self):

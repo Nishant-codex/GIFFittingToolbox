@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from scipy.signal import fftconvolve
-from scipy import weave
-from scipy.weave import converters
+# from scipy import weave
+# from scipy.weave import converters
 
 import Tools
 
@@ -51,7 +51,7 @@ class Filter_Exps(Filter) :
  
     def setFilter_Function(self, f):
         
-        print "This function is not yet available."
+        print("This function is not yet available.")
         
               
     
@@ -86,7 +86,7 @@ class Filter_Exps(Filter) :
         
         else :
             
-            print "Error: number of filter coefficients does not match the number of basis functions!"
+            print("Error: number of filter coefficients does not match the number of basis functions!")
         
         return 0
         
@@ -181,53 +181,35 @@ class Filter_Exps(Filter) :
         p_spks_i = Tools.timeToIndex(spks, dt)        # spike times (in time indices)
         p_spks_i = p_spks_i.astype("double")
         p_spks_L = len(p_spks_i)
-        
+        print(p_spks_L)
         
         # Matrix in which the result is stored
         # ie, spike train filtered with different basis functions
-        X  = np.zeros((p_T,R))
-        X  = X.astype("double")
+  
+        def compute_convolution(p_T, p_dt,p_spks_L,p_spks_i,p_taus,R):
+            X  = np.zeros((p_T,R))
+            X  = X.astype("double")
+            spks_L     = p_spks_L  
+            spks_cnt   = 0
+            next_spike = p_spks_i[spks_cnt]
+            for t in range(p_T-1):
+                for r in range(R):
+                    X[t+1,r] = (1.0- dt/p_taus[r])*X[t,r]             
 
-      
-        code =  """
-                #include <math.h>
-                
-                int   T_ind      = int(p_T);                
-                float dt         = float(p_dt); 
-                
-                int spks_L     = int(p_spks_L);  
-                int spks_cnt   = 0;
-                int next_spike = int(p_spks_i(0));
-
-
-                // CONVOLUTION
-                
-                for (int t=0; t<T_ind-1; t++) {
-       
+                if t==next_spike-1:
+                                                   
+                    for r in range(R): 
+                        X[t+1,r] += 1.0 #everybody decay and jump
+                    
+                    if spks_cnt < spks_L-1: 
+                        spks_cnt += 1
+                        next_spike = np.int32(p_spks_i[spks_cnt])
+            return X
 
         
-                    for (int r=0; r<R; r++) 
-                        X(t+1,r) = (1.0- dt/p_taus(r))*X(t,r);        // everybody decay
-      
-                    
-                    if (t == next_spike-1) {
-                    
-                        for (int r=0; r<R; r++) { 
-                            X(t+1,r) += 1.0;                          // everybody decay and jump
-                        } 
-                        
-                        spks_cnt += 1;
-                        next_spike = int(p_spks_i(spks_cnt));
-                    }
-                                    
-                }
-                
-                """
- 
-        vars = [ 'p_T', 'p_dt', 'p_spks_L', 'p_spks_i', 'p_taus', 'X', 'R'] 
-        
-        v = weave.inline(code, vars, type_converters=converters.blitz)
+        X = compute_convolution(p_T, p_dt,p_spks_L,p_spks_i,p_taus,R)
 
       
         return X
+
 

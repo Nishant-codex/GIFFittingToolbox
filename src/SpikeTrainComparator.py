@@ -52,7 +52,7 @@ class SpikeTrainComparator :
     
     def computeMD_Kistler(self, delta, dt) :        
          
-        print "Computing Md* - Kistler window (%0.1f ms precision)..." % (delta)
+        print("Computing Md* - Kistler window (%0.1f ms precision)..." % (delta))
         
         KistlerDotProduct = SpikeTrainComparator.Md_dotProduct_Kistler
         KistlerDotProduct_args = {'delta' : delta }
@@ -81,7 +81,7 @@ class SpikeTrainComparator :
 
     def computeMD_Rect(self, delta, dt) :        
          
-        print "Computing Md* - Rectangular window (%0.1f ms precision)..." % (delta)
+        print("Computing Md* - Rectangular window (%0.1f ms precision)..." % (delta))
         
         RectDotProduct = SpikeTrainComparator.Md_dotProduct_Rect
         RectDotProduct_args = {'delta' : delta }
@@ -145,7 +145,7 @@ class SpikeTrainComparator :
                 
         MDstar = 2.0*dotproduct_dm / (dotproduct_dd_unbaiased + dotproduct_mm)
         
-        print "Md* = %0.4f" % (MDstar)
+        print("Md* = %0.4f" % (MDstar))
                 
 
         return MDstar
@@ -248,7 +248,7 @@ class SpikeTrainComparator :
         VAR = np.var(spks_avg_data_smooth)
         pct_variance_explained = (1.0 - SSE/VAR)*100.0
         
-        print "Percentage of variance explained: %0.1f" % (pct_variance_explained)
+        print("Percentage of variance explained: %0.1f" % (pct_variance_explained))
         
         plt.show()
         

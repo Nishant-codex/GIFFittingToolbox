@@ -54,7 +54,7 @@ class AEC_Badel(AEC) :
     
     def performAEC(self, experiment):
 
-        print "\nPERFORM ACTIVE ELECTRODE COMPENSATION (Badel method)..."
+        print("\nPERFORM ACTIVE ELECTRODE COMPENSATION (Badel method)...")
 
         # Estimate electrode filter using the AEC traces of a given Experiment
         self.computeElectrodeFilter(experiment)
@@ -76,7 +76,7 @@ class AEC_Badel(AEC) :
         Using the AEC data stored for a given Experiment expr.
         """
         
-        print "\nEstimate electrode properties..."
+        print("\nEstimate electrode properties...")
         
         # set experimental sampling frequency
         dt = expr.dt       
@@ -119,7 +119,7 @@ class AEC_Badel(AEC) :
             ############################################
     
             # Resample npPoints datapoints from ROI and define X matrix and Y vector for bootstrap regression
-            ROI_selection_sampled = sample(ROI_selection, nbPoints)
+            ROI_selection_sampled = sample(list(ROI_selection), nbPoints)
             Y = np.array(V_dot[ROI_selection_sampled])
             X_tmp = X[ROI_selection_sampled, :]    
                     
@@ -157,13 +157,13 @@ class AEC_Badel(AEC) :
 
             # Store the bootstrap repetition
             self.K_e_all.append(Ke_tmp)
-            print "Repetition ", (rep+1), " R_e (MOhm) = %0.2f" % (Ke_tmp.computeIntegral(dt))
+            print("Repetition ", (rep+1), " R_e (MOhm) = %0.2f" % (Ke_tmp.computeIntegral(dt)))
 
         # Compute final filter by averaging the filters obtained via bootstrap 
         self.K_opt = Filter.averageFilters(self.K_opt_all)
         self.K_e = Filter.averageFilters(self.K_e_all)   
         
-        print "Done!"      
+        print("Done!")      
 
 
     ##############################################################################################    
@@ -176,20 +176,20 @@ class AEC_Badel(AEC) :
         Traces are compensated according to Eq. 15 in Pozzorini et al. PLOS Comp. Biol. 2015
         """
         
-        print "\nCompensate experiment"
+        print("\nCompensate experiment")
         
-        print "AEC trace..."
+        print("AEC trace...")
         self.deconvolveTrace(expr.AEC_trace)
 
-        print "Training set..."        
+        print("Training set...")        
         for tr in expr.trainingset_traces :
             self.deconvolveTrace(tr)
          
-        print "Test set..."     
+        print("Test set...")     
         for tr in expr.testset_traces :
             self.deconvolveTrace(tr)         
         
-        print "Done!"
+        print("Done!")
          
          
          
@@ -206,7 +206,7 @@ class AEC_Badel(AEC) :
         trace.V = V_aec
         trace.AEC_flag = True
         
-        trace.detectSpikes()
+        trace.detectSpikes_python()
    
     
 
@@ -249,3 +249,4 @@ class AEC_Badel(AEC) :
         Filter.plotAverageFilter(self.K_e_all, 0.05, label_x='Time (ms)', label_y='Electrode filter (MOhm/ms)', plot_expfit=False)
        
         plt.show()
+

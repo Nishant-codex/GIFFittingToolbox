@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/src')
 
 import matplotlib.pyplot as plt
 
@@ -34,7 +34,7 @@ A plot is produced in which the optimal model parameters are plotted on top of e
 
 myExp = Experiment('Experiment 1', 0.1)
 
-PATH = '../../data/gif_test/'
+PATH = 'C:/Users/Nishant Joshi/Model_fitting/GIFFittingToolbox/data/gif_test/'
 
 # Load AEC data
 myExp.setAECTrace(PATH + 'Cell3_Ger1Elec_ch2_1007.ibw', 1.0, PATH + 'Cell3_Ger1Elec_ch3_1007.ibw', 1.0, 10000.0, FILETYPE='Igor')
@@ -134,14 +134,14 @@ myGIF_exp.fit(myExp, DT_beforeSpike=5.0)
 ############################################################################################################
 
 # Use the two models to predict spikes in the test set and evaluate Md*
-myPredictionGIF_rect = myExp.predictSpikes(myGIF_rect, nb_rep=5 00)
+myPredictionGIF_rect = myExp.predictSpikes(myGIF_rect, nb_rep=500)
 myPredictionGIF_exp  = myExp.predictSpikes(myGIF_exp, nb_rep=500)
 
 
-print "Model performance:"
-print "GIF rect: "
+print("Model performance:")
+print("GIF rect: ")
 myPredictionGIF_rect.computeMD_Kistler(4.0, 0.1) 
-print "GIF exp: "
+print("GIF exp: ")
 myPredictionGIF_exp.computeMD_Kistler(4.0, 0.1)     
 
 
@@ -150,7 +150,7 @@ myPredictionGIF_exp.computeMD_Kistler(4.0, 0.1)
 ############################################################################################################
 
 GIF.compareModels([myGIF_rect, myGIF_exp], labels=['GIF rect', 'GIF exp'])
-
+    
 
 
 
