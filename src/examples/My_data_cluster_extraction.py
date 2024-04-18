@@ -7,6 +7,7 @@ from GIF import *
 from Filter_Rect_LogSpaced import *
 from Filter_Rect_LinSpaced import *
 import pickle
+from Filter_Exps import *
 import matplotlib.pyplot as plt
 sys.path.append('C:/Users/Nishant Joshi/Downloads/Old_code/repo/single_cell_analysis/scripts')
 from utils import * 
@@ -16,21 +17,6 @@ from utils import *
 This file shows how to fit a GIF to some experimental data.
 More instructions are provided on the website. 
 """
-
-#Inhibitory
-# with open("G:/My Drive/Bernstein/170725_NC_82_INH.pickle",'rb') as f:
-#     data = pickle.load(f)
-# I_data = data['I'][:120*20000]
-# V_data = data['V'][:120*20000]
-# spikes_data = data['spikes']    
-
-#Excitatory
-# with open("G:/My Drive/Bernstein/170815_NC_109_EXC.pickle",'rb') as f:
-#     data = pickle.load(f)
-# I_data = data['I'][:120*20000]
-# V_data = data['V'][:120*20000]
-# spikes_data = data['spikes'] 
-
 
 
 def getBinarySpikeTrain(V,spikes,dt,type='zero'):
@@ -100,9 +86,10 @@ def get_gamma_factor(modelspks, dataspks, delta, time, dt, rate_correction=True)
         rate_term = 1 + 2*np.abs((data_rate - model_rate)/data_rate)
     else:
         rate_term = 1
-    # return gamma
 
-    return np.clip(rate_term - gamma, 0, np.inf)
+    return gamma
+
+    # return np.clip(rate_term - gamma, 0, np.inf)
 
 
 ############################################################################################################
@@ -111,74 +98,83 @@ def get_gamma_factor(modelspks, dataspks, delta, time, dt, rate_correction=True)
 paramlist  =  [] 
 path = 'D:/Analyzed/'
 for file in os.listdir(path):
-    
 
     data = loadmatInPy(path+file)
     for trial,data_i in enumerate(data):
-        I_data = data_i['input_current'][:120*20000]
-        V_data = data_i['membrane_potential'][:120*20000]
-        spikes_data = data_i['spikeindices'] 
-        cond = data_i['input_generation_settings']['condition']
-        trial_i = trial
-        experimentname = data_i['input_generation_settings']['experimentname']
-        myExp = Experiment('Experiment 1', 0.05)
+        try:
+            I_data = data_i['input_current'][:120*20000]
+            V_data = data_i['membrane_potential'][:120*20000]
+            spikes_data = data_i['spikeindices'] 
+            cond = data_i['input_generation_settings']['condition']
+            trial_i = trial
+            experimentname = data_i['input_generation_settings']['experimentname']
+            myExp = Experiment('Experiment 1', 0.05)
 
-        # Load AEC data
-        # myExp.setAECTrace(V_data[:int(10*20000)],1e-3,I_data[:int(10*20000)] ,1e-12, 10000.0, FILETYPE='Array')
+            print('Running file '+file+' trial '+str(trial)+' condition '+cond)
+            # Load AEC data
+            # myExp.setAECTrace(V_data[:int(10*20000)],1e-3,I_data[:int(10*20000)] ,1e-12, 10000.0, FILETYPE='Array')
 
-        # Load training set data
-        myExp.addTrainingSetTrace(V_data,1e-3,I_data, 1e-12, 120000.0, FILETYPE='Array')
+            # Load training set data
+            myExp.addTrainingSetTrace(V_data,1e-3,I_data, 1e-12, 120000.0, FILETYPE='Array')
 
-        ############################################################################################################
-        # STEP 3: FIT GIF MODEL TO DATA
-        ############################################################################################################
+            ############################################################################################################
+            # STEP 3: FIT GIF MODEL TO DATA
+            ############################################################################################################
 
-        # Create a new object GIF 
-        myGIF = GIF(0.05)
-        myGIF.print_log=False
-        # Define parameters
-        myGIF.Tref = 4.0  
+            # Create a new object GIF 
+            myGIF = GIF(0.05)
+            myGIF.print_log=False
+            # Define parameters
+            myGIF.Tref = 4.0  
 
-        myGIF.eta = Filter_Rect_LogSpaced()
-        myGIF.eta.setMetaParameters(length=500.0, binsize_lb=2.0, binsize_ub=1000.0, slope=4.5)
-
-
-        myGIF.gamma = Filter_Rect_LogSpaced()
-        myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=5.0, binsize_ub=1000.0, slope=5.0)
-
-
-
-        # Define the ROI of the training set to be used for the fit (in this example we will use only the first 100 s)
-        myExp.trainingset_traces[0].setROI([[0,100000.0]])
-
-        # To visualize the training set and the ROI call again
-        myExp.detectSpikes_python()
-        # myExp.plotTrainingSet()
-
-        # Perform the fit
-        myGIF.fit(myExp, DT_beforeSpike=5.0)
-
-        # Plot the model parameters
-        # myGIF.printParameters()
-        # myGIF.plotParameters()   
-
-        I = myExp.trainingset_traces[0].I
-        V_exp = myExp.trainingset_traces[0].V
-        spks = myExp.trainingset_traces[0].spks*myExp.dt
-        (time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
-
-        spks_model = getBinarySpikeTrain(V,S,myExp.dt,type='nan')
-        spks_data = getBinarySpikeTrain(V_exp,spks,myExp.dt,type='nan')
-        gamma = get_gamma_factor(S/1000,spks/1000,4/1000,len(V)/20000,1/20000)
-        print('gamma:',gamma)
+            #Rect Filter
+            myGIF.eta = Filter_Rect_LogSpaced()
+            myGIF.eta.setMetaParameters(length=500.0, binsize_lb=2.0, binsize_ub=1000.0, slope=4.5)
+            myGIF.gamma = Filter_Rect_LogSpaced()
+            myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=1.0, binsize_ub=1000.0, slope=5.0)
 
 
-        ## Save the model
-        myGIF.saveparams(paramlist,gamma,cond,trial_i,experimentname)
-        
+
+            # Exp Filter
+            # myGIF.eta = Filter_Exps()
+            # myGIF.eta.setFilter_Timescales([1.0, 5.0, 30.0, 70.0, 100.0, 500.0])
+            # myGIF.gamma = Filter_Exps()
+            # myGIF.gamma.setFilter_Timescales([1.0, 5.0, 30.0, 70.0, 100.0, 500.0])
+
+
+            # Define the ROI of the training set to be used for the fit (in this example we will use only the first 100 s)
+            myExp.trainingset_traces[0].setROI([[0,100000.0]])
+
+            # To visualize the training set and the ROI call again
+            myExp.detectSpikes_python()
+            # myExp.plotTrainingSet()
+
+            # Perform the fit
+            myGIF.fit(myExp, DT_beforeSpike=5.0)
+
+            # Plot the model parameters
+            # myGIF.printParameters()
+            # myGIF.plotParameters()   
+
+            I = myExp.trainingset_traces[0].I
+            V_exp = myExp.trainingset_traces[0].V
+            spks = myExp.trainingset_traces[0].spks*myExp.dt
+            (time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
+
+            spks_model = getBinarySpikeTrain(V,S,myExp.dt,type='nan')
+            spks_data = getBinarySpikeTrain(V_exp,spks,myExp.dt,type='nan')
+            gamma = get_gamma_factor(S/1000,spks/1000,5/1000,len(V)/20000,1/20000)
+            print('gamma:',gamma)
+
+
+            ## Save the model
+            myGIF.saveparams(paramlist,gamma,cond,trial_i,experimentname)
+        except:
+            print('Problem with ',file)
 
 with open('D:/Biophysical_cluster/cluster_params.p','wb') as f:
-    pickle.dumps(paramlist)
+    
+    pickle.dump(paramlist,f)
 
 
 

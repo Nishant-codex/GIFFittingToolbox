@@ -108,7 +108,6 @@ class GIF(ThresholdModel) :
         
         return spks_times
 
-
     ########################################################################################################
     # IMPLEMENT ABSTRACT METHODS OF Threshold Model
     ########################################################################################################
@@ -122,12 +121,11 @@ class GIF(ThresholdModel) :
         
         return (spks_times, V, V_T)
 
-
     ########################################################################################################
     # METHODS FOR NUMERICAL SIMULATIONS
     ########################################################################################################  
       
-    def simulate(self, I, V0):
+    def simulate(self, I, V0,):
  
         """
         Simulate the spiking response of the GIF model to an input current I (nA) with time step dt.
@@ -139,7 +137,7 @@ class GIF(ThresholdModel) :
         - V_T      : mV, firing threshold
         - spks     : ms, list of spike times 
         """
- 
+        np.random.seed(seed)
         # Input parameters
         p_T         = len(I)
         p_dt        = self.dt
@@ -167,9 +165,7 @@ class GIF(ThresholdModel) :
         V = np.array(np.zeros(p_T), dtype="double")
         I = np.array(I, dtype="double")
         spks = np.array(np.zeros(p_T), dtype="double")                      
-        # eta_sum = np.array(np.zeros(p_T + 2*p_eta_l), dtype="double")
-        # gamma_sum = np.array(np.zeros(p_T + 2*p_gamma_l), dtype="double")            
- 
+
         # Set initial condition
         @numba.jit(nopython=True)
         def inner_simulation(I, V0, dt, gl, C, El, Vr, Tref, Vt_star, DV, lambda0, p_eta, p_gamma):
@@ -207,16 +203,16 @@ class GIF(ThresholdModel) :
                     if (t+1 < T_ind-1):
                         # V[t-T_ref_ind] = 60
                         V[t+1] = Vr
-                    # // UPDATE ADAPTATION PROCESSES   
-                    j=0
-                    while j<eta_l:
-                        eta_sum[t+1+j] += eta[j]
-                        j+=1
 
-                    j=0
-                    while j<gamma_l:
-                        gamma_sum[t+1+j] += gamma[j] 
-                        j+=1       
+                    # // UPDATE ADAPTATION PROCESSES   
+
+                    for j in range(eta_l-1):
+                        eta_sum[t+1+j] += eta[j]
+
+                    for j in range(gamma_l-1):
+                        gamma_sum[t+1+j] += gamma[j]
+                    
+
                 t+=1       
             time = np.arange(T_ind) * dt
             eta_sum = eta_sum[:T_ind]
@@ -335,9 +331,11 @@ class GIF(ThresholdModel) :
         self.fitStaticThreshold(experiment)
 
         self.fitThresholdDynamics(experiment)
+    
     ########################################################################################################
     # FIT VOLTAGE RESET GIVEN ABSOLUTE REFRACOTORY PERIOD (step 1)
     ########################################################################################################
+    
     def fitVoltageReset(self, experiment, Tref, do_plot=False):
         
         """
@@ -918,15 +916,15 @@ class GIF(ThresholdModel) :
         print("-------------------------\n")
                   
     def saveparams(self,paramlist,gamma,cond,trial,exp_name):
-        paramlist.append([self.C/self.gl,
-                          1.0/self.gl,
-                          self.C,
-                          self.gl,
-                          self.El,
-                          self.Tref,
-                          self.Vr,
-                          self.Vt_star,
-                          self.DV,
+        paramlist.append([self.C/self.gl,   #"tau_m (ms)" 
+                          1.0/self.gl,      #"R (MOhm):"  
+                          self.C,           #"C (nF):"   
+                          self.gl,          #"gl (nS):"   
+                          self.El,          #"El (mV):"    
+                          self.Tref,        #"Tref (ms)"   
+                          self.Vr,          #"Vr (mV):"    
+                          self.Vt_star,     #"Vt* (mV):"   
+                          self.DV,          #"DV (mV):"   
                           self.var_explained_V,
                           self.var_explained_dV,
                           gamma,

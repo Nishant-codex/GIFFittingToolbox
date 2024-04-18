@@ -102,10 +102,10 @@ myGIF.fit(myExp, DT_beforeSpike=5.0)
 myGIF.printParameters()
 # myGIF.plotParameters()   
 
-I = myExp.trainingset_traces[0].I
-V_exp = myExp.trainingset_traces[0].V
-spks =myExp.trainingset_traces[0].spks/10
-(time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
+# I = myExp.trainingset_traces[0].I
+# V_exp = myExp.trainingset_traces[0].V
+# spks =myExp.trainingset_traces[0].spks/10
+# (time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
 
 def get_gamma_factor(modelspks, dataspks, delta, time, dt, rate_correction=True):
     """
@@ -178,17 +178,17 @@ def getBinarySpikeTrain(V,spikes,dt,type='zero'):
     b_spikes[spikeinds] =1
     return b_spikes
 
-spks_model = getBinarySpikeTrain(V,S,0.1,type='nan')
-spks_data = getBinarySpikeTrain(V_exp,spks,0.1,type='nan')
-print('gamma:',get_gamma_factor(S/1000,spks/1000,4/1000,len(V)/10000,1/10000))
+# spks_model = getBinarySpikeTrain(V,S,0.1,type='nan')
+# spks_data = getBinarySpikeTrain(V_exp,spks,0.1,type='nan')
+# print('gamma:',get_gamma_factor(S/1000,spks/1000,4/1000,len(V)/10000,1/10000))
 
-plot_time = 1 # s
-plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
-plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
-plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
-plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
-plt.legend(loc='lower left')
-plt.show()
+# plot_time = 1 # s
+# plt.plot(time[:plot_time*10000],V[:plot_time*10000],c='red',label='model')
+# plt.plot(time[:plot_time*10000],V_exp[:plot_time*10000],c='black',label='recording')
+# plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+# plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+# plt.legend(loc='lower left')
+# plt.show()
 
 
 
@@ -249,13 +249,13 @@ plt.show()
 
 # Use the myGIF model to predict the spiking data of the test data set in myExp
 
-# myPrediction = myExp.predictSpikes(myGIF, nb_rep=500)
+myPrediction = myExp.predictSpikes(myGIF, nb_rep=500)
 
-# # Compute Md* with a temporal precision of +/- 4ms
-# Md = myPrediction.computeMD_Kistler(4.0, 0.1)    
+# Compute Md* with a temporal precision of +/- 4ms
+Md = myPrediction.computeMD_Kistler(4.0, 0.1)    
 
-# # Plot data vs model prediction
-# myPrediction.plotRaster(delta=1000.0) 
+# Plot data vs model prediction
+myPrediction.plotRaster(delta=1000.0) 
 
 
 
