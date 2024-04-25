@@ -75,11 +75,11 @@ myGIF = GIF(0.05)
 myGIF.Tref = 4.0  
 
 myGIF.eta = Filter_Rect_LogSpaced()
-myGIF.eta.setMetaParameters(length=500.0, binsize_lb=2.0, binsize_ub=1000.0, slope=4.5)
+myGIF.eta.setMetaParameters(length=500.0, binsize_lb=1.0, binsize_ub=1000.0, slope=4.5)
 
 
 myGIF.gamma = Filter_Rect_LogSpaced()
-myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=5.0, binsize_ub=1000.0, slope=5.0)
+myGIF.gamma.setMetaParameters(length=500.0, binsize_lb=1.0, binsize_ub=1000.0, slope=5.0)
 
 
 
@@ -100,7 +100,7 @@ myGIF.plotParameters()
 I = myExp.trainingset_traces[0].I
 V_exp = myExp.trainingset_traces[0].V
 spks =myExp.trainingset_traces[0].spks/10
-(time, V, I_a, V_t, S) = myGIF.simulate(I, myGIF.El)
+(time, V, I_a, V_t, S, probs) = myGIF.simulate(I, myGIF.El)
 
 
 def getBinarySpikeTrain(V,spikes,dt,type='zero'):

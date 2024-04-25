@@ -117,7 +117,7 @@ class GIF(ThresholdModel) :
 
         self.setDt(dt)
     
-        (time, V, eta_sum, V_T, spks_times) = self.simulate(I, self.El)
+        (time, V, eta_sum, V_T, spks_times,_) = self.simulate(I, self.El)
         
         return (spks_times, V, V_T)
 
@@ -125,7 +125,7 @@ class GIF(ThresholdModel) :
     # METHODS FOR NUMERICAL SIMULATIONS
     ########################################################################################################  
       
-    def simulate(self, I, V0,):
+    def simulate(self, I, V0,seed=0):
  
         """
         Simulate the spiking response of the GIF model to an input current I (nA) with time step dt.
@@ -183,7 +183,8 @@ class GIF(ThresholdModel) :
 
 
             V[0] = V0
-
+            
+            probs = [0]
             # 
             t = 0
             while t<T_ind-1:
@@ -191,7 +192,7 @@ class GIF(ThresholdModel) :
                 # COMPUTE PROBABILITY OF EMITTING ACTION POTENTIAL
                 lambda_val = lambda0*np.exp((V[t+1]-Vt_star-gamma_sum[t])/DV )
                 p_dontspike = np.exp(-lambda_val*(dt/1000.0)) #since lambda0 is in Hz, dt must also be in Hz (this is why dt/1000.0)
-
+                probs.append(p_dontspike)
                 # PRODUCE SPIKE STOCHASTICALLY
                 r = np.random.random()
                 if r > p_dontspike:
@@ -219,13 +220,13 @@ class GIF(ThresholdModel) :
             V_T = gamma_sum[:T_ind] + Vt_star
             spk_times = np.where(spks == 1.)[0] * dt
 
-            return time, V, eta_sum, V_T, spk_times
+            return time, V, eta_sum, V_T, spk_times,probs
 
-        time, V, eta_sum,V_T, spk_times = inner_simulation(I, V0, p_dt, p_gl, p_C, p_El, p_Vr,
+        time, V, eta_sum,V_T, spk_times,probs = inner_simulation(I, V0, p_dt, p_gl, p_C, p_El, p_Vr,
                                                             p_Tref, p_Vt_star, p_DV, p_lambda0, p_eta,
                                                             p_gamma)
     
-        return (time, V, eta_sum, V_T, spk_times)
+        return (time, V, eta_sum, V_T, spk_times,probs)
         
 
     def simulateDeterministic_forceSpikes(self, I, V0, spks):
@@ -324,7 +325,7 @@ class GIF(ThresholdModel) :
             print("# Fit GIF")
             print("################################")
         
-        self.fitVoltageReset(experiment, self.Tref, do_plot=False)
+        self.fitVoltageReset(experiment, self.Tref, do_plot=True)
         
         self.fitSubthresholdDynamics(experiment, DT_beforeSpike=DT_beforeSpike)
         
@@ -479,7 +480,17 @@ class GIF(ThresholdModel) :
                 
                 # Simulate subthreshold dynamics 
                 (time, V_est, eta_sum_est) = self.simulateDeterministic_forceSpikes(tr.I, tr.V[0], tr.getSpikeTimes())
-         
+
+
+                plot_time = 10 # s
+                plt.plot(time[:plot_time*20000],V_est[:plot_time*20000],c='red',label='model')
+                plt.plot(time[:plot_time*20000],tr.V[:plot_time*20000],c='black',label='recording')
+                # plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+                # plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+                plt.legend(loc='lower left')
+                plt.show()
+
+
                 indices_tmp = tr.getROI_FarFromSpikes(0.0, self.Tref)
                 SSE += sum((V_est[indices_tmp] - tr.V[indices_tmp])**2)
                 VAR += len(indices_tmp)*np.var(tr.V[indices_tmp])
@@ -520,7 +531,8 @@ class GIF(ThresholdModel) :
        
         # Compute and fill the remaining columns associated with the spike-triggered current eta               
         X_eta = self.eta.convolution_Spiketrain_basisfunctions(trace.getSpikeTimes() + self.Tref, trace.T, trace.dt) 
-        
+        plt.plot(X_eta)
+        plt.show()
         X = np.concatenate( (X, X_eta[selection,:]), axis=1 )
 
 
