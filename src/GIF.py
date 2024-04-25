@@ -125,7 +125,7 @@ class GIF(ThresholdModel) :
     # METHODS FOR NUMERICAL SIMULATIONS
     ########################################################################################################  
       
-    def simulate(self, I, V0,seed=0):
+    def simulate(self, I, V0, seed=0):
  
         """
         Simulate the spiking response of the GIF model to an input current I (nA) with time step dt.
@@ -325,7 +325,7 @@ class GIF(ThresholdModel) :
             print("# Fit GIF")
             print("################################")
         
-        self.fitVoltageReset(experiment, self.Tref, do_plot=True)
+        self.fitVoltageReset(experiment, self.Tref, do_plot=False)
         
         self.fitSubthresholdDynamics(experiment, DT_beforeSpike=DT_beforeSpike)
         
@@ -482,13 +482,13 @@ class GIF(ThresholdModel) :
                 (time, V_est, eta_sum_est) = self.simulateDeterministic_forceSpikes(tr.I, tr.V[0], tr.getSpikeTimes())
 
 
-                plot_time = 10 # s
-                plt.plot(time[:plot_time*20000],V_est[:plot_time*20000],c='red',label='model')
-                plt.plot(time[:plot_time*20000],tr.V[:plot_time*20000],c='black',label='recording')
-                # plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
-                # plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
-                plt.legend(loc='lower left')
-                plt.show()
+                # plot_time = 10 # s
+                # plt.plot(time[:plot_time*20000],V_est[:plot_time*20000],c='red',label='model')
+                # plt.plot(time[:plot_time*20000],tr.V[:plot_time*20000],c='black',label='recording')
+                # # plt.scatter(time[:plot_time*10000], spks_model[:plot_time*10000]*85,c='red' ,marker='|')
+                # # plt.scatter(time[:plot_time*10000], spks_data[:plot_time*10000]*75,c='black',marker='|')
+                # plt.legend(loc='lower left')
+                # plt.show()
 
 
                 indices_tmp = tr.getROI_FarFromSpikes(0.0, self.Tref)
@@ -531,8 +531,6 @@ class GIF(ThresholdModel) :
        
         # Compute and fill the remaining columns associated with the spike-triggered current eta               
         X_eta = self.eta.convolution_Spiketrain_basisfunctions(trace.getSpikeTimes() + self.Tref, trace.T, trace.dt) 
-        plt.plot(X_eta)
-        plt.show()
         X = np.concatenate( (X, X_eta[selection,:]), axis=1 )
 
 
@@ -928,6 +926,15 @@ class GIF(ThresholdModel) :
         print("-------------------------\n")
                   
     def saveparams(self,paramlist,gamma,cond,trial,exp_name):
+
+        K_support = np.linspace(0,150.0, 300)             
+        K = 1./self.C*np.exp(-K_support/(self.C/self.gl)) 
+
+        (gamma_support, gamma_threshold) = self.gamma.getInterpolatedFilter(self.dt) 
+
+        (eta_support, eta) = self.eta.getInterpolatedFilter(self.dt) 
+
+
         paramlist.append([self.C/self.gl,   #"tau_m (ms)" 
                           1.0/self.gl,      #"R (MOhm):"  
                           self.C,           #"C (nF):"   
@@ -940,6 +947,9 @@ class GIF(ThresholdModel) :
                           self.var_explained_V,
                           self.var_explained_dV,
                           gamma,
+                          K,
+                          eta,
+                          gamma_threshold,
                           cond,
                           trial,
                           exp_name
