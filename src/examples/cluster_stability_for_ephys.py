@@ -32,5 +32,6 @@ if __name__ == "__main__":
         pickle.dump({'e_ephys':ephys_E,
                      'i_ephys':ephys_I,
                      'e_biophys':biophys_E,
-                     'i_biophys':biophys_I,},
+                     'i_biophys':biophys_I,},ls
+                     
                      file=f)

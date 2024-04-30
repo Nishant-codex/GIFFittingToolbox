@@ -5,7 +5,7 @@ from sklearn.metrics import confusion_matrix
 import numpy as np
 import xgboost as xgb
 import matplotlib.pyplot as plt 
-
+import matplotlib as mpl 
 
 def return_xg_boost_trees_classification(data:np.ndarray , labels: list ):
     

@@ -2,7 +2,7 @@ import numpy as np
 import seaborn as sns 
 import matplotlib.pyplot as plt 
 import pandas as pd 
-from sknetwork.clustering import Louvain,modularity
+from sknetwork.clustering import Louvain,get_modularity
 import umap
 
 def return_confusion_matrix(df1,df2,label1_name,label2_name):
@@ -83,7 +83,7 @@ def find_optimum_res(data):
     full_data = data
     # BLUE COLOR
     BlueCol = '\033[94m'
-    subsets=[100]
+    subsets=[0.8]
     import random 
     for res in resolution_list:
         print("\n" + BlueCol + str(res))
@@ -96,7 +96,13 @@ def find_optimum_res(data):
                                         random_state=random.randint(1,100000),
                                         n_jobs=1
                                         )
-                rand_data = np.vstack(np.random.permutation(full_data[0:(int(len(full_data)*frac)),:]))
+                
+                idx1 = np.zeros(len(full_data),dtype=bool)
+                rows_to_keep = np.random.randint(0,int(len(full_data)),int(len(full_data)*frac))
+                idx1[rows_to_keep] = True
+                part_data = full_data[idx1,:]
+
+                rand_data = np.vstack(np.random.permutation(part_data))
                 mapper = reducer_rand_test.fit(rand_data)
                 embedding_rand_test = reducer_rand_test.transform(rand_data)
 
@@ -166,7 +172,7 @@ def find_optimum_res_with_cols(data:np.ndarray,cols:list):
     for i in range(len(cols)):
         idx2 = ~np.zeros_like(cols,dtype=bool)
         idx2[i] =0 
-        cols_  = np.array(cols)[~idx2]  
+        cols_  = np.array(cols)[~idx2][0]  
         print(cols_)
         resolution_list = np.linspace(0,5,11)
         modularity_dict = {}
