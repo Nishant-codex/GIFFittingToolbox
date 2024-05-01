@@ -9,8 +9,11 @@ from Cluster_stability import *
 import pickle
 
 if __name__ == "__main__":
-    ephys = pd.read_csv("D:/Cluster_stability/ephys_EI_class.csv")
-    biophys = pd.read_csv("D:/Cluster_stability/biophys_EI_class.csv")
+
+    path_save = os.getcwd()
+
+    ephys = pd.read_csv(os.getcwd()+"/Cluster_stability/ephys_EI_class.csv")
+    biophys = pd.read_csv(os.getcwd()+"/Cluster_stability/biophys_EI_class.csv")
     cols_to_compare_ephys = ephys.columns[1:-5]
     cols_to_compare_biophys = ['tau_m (ms)', 'R (MOhm):', 'C (nF):', 'gl (nS):', 'El (mV):', 'Vr (mV):', 'Vt* (mV):', 'DV (mV):']
 
@@ -22,16 +25,26 @@ if __name__ == "__main__":
     biophys_I = biophys[biophys.labels_wave ==0]
 
     ephys_e_cluster_data = find_optimum_res_with_cols(ephys_E[cols_to_compare_ephys].to_numpy(),list(cols_to_compare_ephys))
+
+    with open(path_save+"/cluster_stablity_ephys_E.pkl",'wb') as f:
+        pickle.dump(ephys_e_cluster_data, file=f)
+
+
     ephys_i_cluster_data = find_optimum_res_with_cols(ephys_I[cols_to_compare_ephys].to_numpy(),list(cols_to_compare_ephys))
 
+    with open(path_save+"/cluster_stablity_ephys_I.pkl",'wb') as f:
+        pickle.dump(ephys_i_cluster_data, file=f)
+
+
     biophys_e_cluster_data = find_optimum_res_with_cols(biophys_E[cols_to_compare_biophys].to_numpy(),list(cols_to_compare_biophys))
+
+    with open(path_save+"/cluster_stablity_biophys_E.pkl",'wb') as f:
+        pickle.dump(biophys_e_cluster_data, file=f)
+
+
     biophys_i_cluster_data = find_optimum_res_with_cols(biophys_I[cols_to_compare_biophys].to_numpy(),list(cols_to_compare_biophys))
 
-    path_save = os.getcwd()
-    with open(path_save+"/cluster_stablity.pkl",'wb') as f:
-        pickle.dump({'e_ephys':ephys_E,
-                     'i_ephys':ephys_I,
-                     'e_biophys':biophys_E,
-                     'i_biophys':biophys_I,},ls
-                     
-                     file=f)
+
+    with open(path_save+"/cluster_stablity_biophys_i.pkl",'wb') as f:
+        pickle.dump(biophys_i_cluster_data, file=f)
+        
