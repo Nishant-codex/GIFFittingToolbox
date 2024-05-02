@@ -93,8 +93,8 @@ def find_optimum_res(data):
             for i in list(range(1,25)):
                 reducer_rand_test = umap.UMAP(n_neighbors = 20, 
                                         min_dist=0.1, 
-                                        random_state=random.randint(1,100000),
-                                        n_jobs=1
+                                        # random_state=random.randint(1,100000),
+                                        n_jobs=-1
                                         )
                 
                 idx1 = np.zeros(len(full_data),dtype=bool)

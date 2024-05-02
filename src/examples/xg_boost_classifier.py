@@ -35,7 +35,6 @@ def return_xg_boost_trees_classification(data:np.ndarray , labels: list ):
                             verbose=10, n_jobs=-1)
     UMAP_grid_search.fit(UMAP_X_train, UMAP_y_train)
 
-    confusion_matrix(UMAP_y_test,UMAP_grid_search.predict(UMAP_X_test))
 
     confusion_mat_counts = confusion_matrix(UMAP_y_test,UMAP_grid_search.predict(UMAP_X_test))
 
@@ -53,11 +52,12 @@ def return_xg_boost_trees_classification(data:np.ndarray , labels: list ):
 
     conf_mat = np.array(conf_mat_row_list)
 
+    print("Mean accuracy",np.mean(np.diag(conf_mat)*100))
     colormap = mpl.cm.YlGnBu
     colormap.set_under('white')
 
     eps = np.spacing(0.0)
-    f, arr = plt.subplots(1,figsize=[5,4])
+    f, arr = plt.subplots(1,figsize=[8,8])
     mappable = arr.imshow(conf_mat,cmap=colormap,vmin=eps,vmax=1.)
     color_bar = f.colorbar(mappable, ax=arr, extend='min')
     color_bar.set_label('P (Predicted | True)',fontsize=12,labelpad=15,fontname="Arial")
@@ -66,17 +66,17 @@ def return_xg_boost_trees_classification(data:np.ndarray , labels: list ):
     #Specify label behavior of the main diagonal
     for i in range(0,N_CLUST):
         if int(conf_mat[i,i]*100) == 100:
-            arr.text(i-0.38,i+0.17,int(round(conf_mat[i,i]*100)),fontsize=10,c='white',fontname="Arial")
+            arr.text(i-0.38,i+0.17,int(round(conf_mat[i,i]*100)),fontsize=12,c='white',fontname="Arial")
         else:
-            arr.text(i-0.34,i+0.16,int(round(conf_mat[i,i]*100)),fontsize=10,c='white',fontname="Arial")
+            arr.text(i-0.34,i+0.16,int(round(conf_mat[i,i]*100)),fontsize=12,c='white',fontname="Arial")
             
     #Specify label behavior of the off-diagonals
     for i in range(0,N_CLUST):
         for j in range(0,N_CLUST):
             if conf_mat[i,j] < 0.1 and conf_mat[i,j] != 0:
-                arr.text(j-0.2,i+0.15,int(round(conf_mat[i,j]*100)),fontsize=10,c='k',fontname="Arial")
-            elif conf_mat[i,j] >= 0.1 and conf_mat[i,j] < 0.6 and conf_mat[i,j] != 0:
-                arr.text(j-0.4, i+0.15,int(round(conf_mat[i,j]*100)),fontsize=10,c='k',fontname="Arial")
+                arr.text(j-0.2,i+0.15,int(round(conf_mat[i,j]*100)),fontsize=12,c='k',fontname="Arial")
+            elif conf_mat[i,j] >= 0.1 and conf_mat[i,j] < 0.7 and conf_mat[i,j] != 0:
+                arr.text(j-0.4, i+0.15,int(round(conf_mat[i,j]*100)),fontsize=12,c='k',fontname="Arial")
 
     arr.set_xticks(range(0,N_CLUST))
     arr.set_xticklabels(range(1,N_CLUST+1),fontsize=12)
