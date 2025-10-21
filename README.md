@@ -11,7 +11,7 @@ Neuronal Identity is Not Static—An Input-Driven Perspective
 Nishant Joshi, Sven van Der Burg, Tansu Celikel, Fleur Zeldenrust
 bioRxiv 2024.10.16.618657; doi: https://doi.org/10.1101/2024.10.16.618657
 
-The original repo is based on the following two publications:
+The original repo is based on the following two publications: \\
 C. Pozzorini, S. Mensi, O. Hagens, R. Naud, C. Koch and W. Gerstner, Automated high-throughput characterization of single neurons by means of simplified spiking neuron models,PLOS Computational Biology 2015
 
 S. Mensi, O. Hagens, W. Gerstner and C. Pozzorini, Enhanced sensitivity to rapid input fluctuations by nonlinear threshold dynamics in neocortical pyramidal neurons, PLOS Computational Biology 2016
