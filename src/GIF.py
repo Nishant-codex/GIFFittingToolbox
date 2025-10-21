@@ -856,6 +856,13 @@ class GIF(ThresholdModel) :
     # PLOT AND PRINT FUNCTIONS
     ########################################################################################################     
               
+    def return_filters(self):
+        (eta_support, eta) = self.eta.getInterpolatedFilter(self.dt) 
+        (gamma_support, gamma) = self.gamma.getInterpolatedFilter(self.dt) 
+        return eta, gamma
+
+
+
     def plotParameters(self) :
         
         """
@@ -904,6 +911,8 @@ class GIF(ThresholdModel) :
         plt.subplots_adjust(left=0.05, bottom=0.15, right=0.95, top=0.92, wspace=0.35, hspace=0.25)
 
         plt.show()
+
+        return eta,gamma
         
     def printParameters(self):
 

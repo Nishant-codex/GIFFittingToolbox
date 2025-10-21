@@ -84,7 +84,7 @@ def return_xg_boost_trees_classification(data:np.ndarray , labels: list ):
     arr.set_yticklabels(range(1,N_CLUST+1),fontsize=12)
     arr.set_xlabel('Predicted Class',fontsize=12)
     arr.set_ylabel('True Class',fontsize=12)
-    plt.tight_layout()
+    # plt.tight_layout()
     
     
     return conf_mat

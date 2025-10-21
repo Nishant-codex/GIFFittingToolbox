@@ -101,7 +101,7 @@ for file in os.listdir(path):
 
     data = loadmatInPy(path+file)
     for trial,data_i in enumerate(data):
-        # try:
+        try:
             I_data = data_i['input_current'][:120*20000]
             V_data = data_i['membrane_potential'][:120*20000]
             spikes_data = data_i['spikeindices'] 
@@ -169,8 +169,8 @@ for file in os.listdir(path):
 
             ## Save the model
             myGIF.saveparams(paramlist,gamma,cond,trial_i,experimentname)
-        # except:
-        #     print('Problem with ',file)
+        except:
+            print('Problem with ',file)
 
 with open('D:/Biophysical_cluster/cluster_params.p','wb') as f:
     
