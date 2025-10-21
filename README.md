@@ -3,8 +3,7 @@
 The GIFFittingToolbox is a Python-based repository designed for fitting and analyzing Generalized Integrate-and-Fire (GIF) neuron models. This repository is a fork of the original implementation, which was written in Python 2. It has been updated to Python 3 and extended for clustering applications for Joshi et. al. 2025. The toolbox provides tools for parameter estimation, model simulation, and evaluation of neuronal dynamics. The models are fitted on the following dataset: 
 
 
-Neuromodulatory influence on information transfer of single cortical neurons. Joshi, 
-Joshi, N. Celikel, T. Zeldenrust, F. Kole, K. Safavi, S.P. Ak, A. Yan, X. Calcini, N. 2025. doi: https://doi.org/10.34973/nhes-qe97
+Neuromodulatory influence on information transfer of single cortical neurons Joshi, N. Celikel, T. Zeldenrust, F. Kole, K. Safavi, S.P. Ak, A. Yan, X. Calcini, N. 2025. doi: https://doi.org/10.34973/nhes-qe97
 
 The accompnying publication is the following: 
 
