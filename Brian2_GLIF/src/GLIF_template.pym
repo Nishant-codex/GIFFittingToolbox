@@ -1,0 +1,53 @@
+#!/bin/env python
+
+import brian2
+setattr(brian2.units, 'none', 1.0)  # add brian2.units.none so metaprogramming works
+
+# Run Brian2 simulation with external input
+def run_brian_sim(stim, dt, init_values, param_dict, method = 'exact'):
+    # Model specification
+    eqs = brian2.Equations("")
+%map dynamics %{
+    eqs += brian2.Equations("${equation} : ${units} (${flags})")
+%}
+    reset = ""
+%map reset %{
+    reset = "\n".join([reset, $S{expression}])
+%}
+%map threshold %{
+    threshold = $S{condition}
+%}
+    refractory = param_dict['t_ref']
+
+    Ie = brian2.TimedArray(stim, dt=dt)
+    nrn = brian2.NeuronGroup(1, eqs, method=method, reset=reset, threshold=threshold, refractory=refractory, namespace=param_dict)
+%map dynamics %{
+    nrn.${variable} = init_values[$s{variable}] * brian2.units.${units}
+%}
+
+    monvars = [%map dynamics %{ $s{variable}, %}]
+    mon = brian2.StateMonitor(nrn, monvars, record=True)
+
+    num_step = len(stim)
+    brian2.defaultclock.dt = dt
+    brian2.run(num_step * dt)
+
+    return (mon.t / brian2.units.second, %map dynamics %{ mon.${variable}[0] / brian2.units.${units},  %})
+
+
+def add_parameter_units(param_dict):
+    param_dict_units = {
+%map parameters %{
+        $s{name}: param_dict[$s{name}] * brian2.units.${units},
+%}
+    }
+    return param_dict_units
+
+
+def parameters_from_list(param_list):
+    param_dict = {
+%map parameters %{
+        $s{name}: param_list[${_NR}],
+%}
+    }
+    return param_dict

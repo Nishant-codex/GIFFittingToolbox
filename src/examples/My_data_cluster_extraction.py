@@ -92,11 +92,13 @@ def get_gamma_factor(modelspks, dataspks, delta, time, dt, rate_correction=True)
     # return np.clip(rate_term - gamma, 0, np.inf)
 
 
+
 ############################################################################################################
 # STEP 1: LOAD EXPERIMENTAL DATA
 ############################################################################################################
 paramlist  =  [] 
 path = 'D:/Analyzed/'
+save_path = 'D:/Biophysical_cluster/'
 for file in os.listdir(path):
 
     data = loadmatInPy(path+file)
@@ -172,7 +174,7 @@ for file in os.listdir(path):
         except:
             print('Problem with ',file)
 
-with open('D:/Biophysical_cluster/cluster_params.p','wb') as f:
+with open(save_path+'cluster_params.p','wb') as f:
     
     pickle.dump(paramlist,f)
 

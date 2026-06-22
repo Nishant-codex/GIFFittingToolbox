@@ -1,0 +1,37 @@
+%snippet model_name %{ GLIF_5 %}
+%table parameters (name, units, decription) %{
+	El		volt		Leak reversal potential
+	C		farad		Membrane capacitance
+	G		siemens		Leak conductance
+	Th_inf	volt		Instantaneous threshold
+	t_ref	second		Refractory period
+	a_r		none		Slope of voltage reset
+	b_r		volt		Intercept of voltage reset
+	a_s		volt		Increment of spike-dependent threshold at reset
+	b_s		hertz		Inverse time constant of spike-dependent threshold
+	a_v		hertz		Voltage dependence of threshold
+	b_v		hertz		Inverse time constant of voltage-dependent threshold
+	A_0		amp			After-spike current 0 amplitude
+	k_0		hertz		After-spike current 0 decay inverse time constant
+	R_0		none		After-spike current 0 reset multiplier
+	A_1		amp			After-spike current 1 amplitude
+	k_1		hertz		After-spike current 1 decay inverse time constant
+	R_1		none		After-spike current 1 reset multiplier
+%}
+%table dynamics (variable, equation, units, flags) %{
+	V		dV/dt = 1 / C * (Ie(t) + I_0 + I_1 - G * (V - El))	volt	unless refractory
+	Th_s	dTh_s/dt = -b_s * Th_s								volt	unless refractory
+	Th_v	dTh_v/dt = a_v * (V - El) - b_v * (Th_v - Th_inf)	volt	unless refractory
+	I_0		dI_0/dt = -k_0 * I_0								amp		unless refractory
+	I_1		dI_1/dt = -k_1 * I_1								amp		unless refractory
+%}
+%table reset (expression) %{
+	V = a_r * V + b_r
+	Th_s = Th_s + a_s
+	Th_v = Th_v
+	I_0 = R_0 * I_0 * exp(-k_0 * (t_ref - dt)) + A_0
+	I_1 = R_1 * I_1 * exp(-k_1 * (t_ref - dt)) + A_1
+%}
+%table threshold (condition) %{
+	V > Th_v + Th_s
+%}

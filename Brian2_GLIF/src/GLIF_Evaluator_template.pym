@@ -1,0 +1,55 @@
+#!/bin/env python
+
+import bluepyopt as bpop
+from bluepyopt.parameters import Parameter
+
+import numpy as np
+
+import %| model_name %| as glif_model
+import brian2 as b2
+b2.prefs.codegen.target = 'cython'
+
+class Evaluator(bpop.evaluators.Evaluator):
+    def __init__(self, input_current, dt, init_values, parameters, fitness, target_voltage):
+        self.input_current = input_current
+        self.dt = dt
+        self.init_values = init_values
+        self.parameters = parameters
+        self.fitness = fitness
+        self.target_voltage = target_voltage
+
+        super(Evaluator, self).__init__(
+                objectives=[x for x in fitness.keys()],
+                params=[
+%map parameters %{
+                    Parameter($s{name},
+                        value = parameters[$s{name}]['value'],
+                        bounds = parameters[$s{name}]['bounds'],
+                        frozen = parameters[$s{name}]['frozen']),
+%}
+                    ]
+                )
+
+    def evaluate_with_dicts(self, param_dict):
+        b2.set_device('cpp_standalone')
+
+        # Simulate with parameter set
+        param_dict_units = glif_model.add_parameter_units(param_dict)
+        t, %map dynamics %{ ${variable},  %} = glif_model.run_brian_sim(
+                self.input_current * b2.amp,
+                self.dt * b2.second,
+                self.init_values,
+                param_dict_units)
+
+        #Evaluate fitness
+        fitness = {x: self.fitness[x](t, self.target_voltage, V) for x in self.fitness.keys()}
+
+        b2.device.delete(force = True)
+        b2.device.reinit()
+
+        return fitness
+
+    def evaluate_with_lists(self, param_list):
+        param_dict = glif_model.parameters_from_list(param_list)
+        fitness = self.evaluate_with_dicts(param_dict)
+        return np.array([fitness[x] for x in fitness.keys()])

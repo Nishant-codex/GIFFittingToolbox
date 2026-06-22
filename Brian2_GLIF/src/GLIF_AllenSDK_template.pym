@@ -1,0 +1,153 @@
+#!/bin/env python
+
+import %| model_name %| as glif_model
+
+## Translation of model parameters from AllenSDK to Brian2
+def load_AllenSDK_parameters(neuron_config, dt, units = True):
+    # unitless
+    param_dict = {
+%map AllenSDK_parameters %{
+        $s{name}: ${value},
+%}
+    }
+
+    if units:
+        param_dict = glif_model.add_parameter_units(param_dict)
+
+    return param_dict
+
+
+## Translation of initial values from AllenSDK to Brian2
+def load_AllenSDK_initial_values(neuron_config):
+    # unitless
+    init_value_dict = {
+%map AllenSDK_initial_values %{
+        $s{variable}: ${value},
+%}
+    }
+
+    return init_value_dict
+
+
+if __name__ == '__main__':
+    import sys
+    import matplotlib.pyplot as plt
+    import allensdk.core.json_utilities as json_utilities
+    from allensdk.core.nwb_data_set import NwbDataSet
+    from allensdk.model.glif.glif_neuron import GlifNeuron
+    from sklearn.metrics import mean_squared_error as MSE
+    import numpy as np
+
+    import brian2 as b2
+    b2.prefs.codegen.target = 'cython'
+
+    # Read files from Allen Brain Atlas: Cell Types
+    neuron_config = json_utilities.read(sys.argv[1])
+    ephys_sweeps = json_utilities.read(sys.argv[2])
+    ephys_file_name = sys.argv[3]
+
+    ds = NwbDataSet(ephys_file_name)
+
+
+    # Setup and run both simulations
+    def sim_Brian2_AllenSDK(neuron_config, data):
+        stim = data['stimulus']
+        dt = 1.0 / data['sampling_rate']
+
+        stim_unit = data['stimulus_unit']
+        if stim_unit == 'pA':
+            stim = stim * 1E12  # convert pA to Amps
+
+        # Brian2 simulation
+        shift_stim = np.pad(stim[1:],(0,1),mode='edge')  # shift stimulus left once
+        param_dict = load_AllenSDK_parameters(neuron_config, dt)
+        init_values = load_AllenSDK_initial_values(neuron_config)
+        # With method = 'euler' the error w.r.t. AllenSDK traces is smaller in some cases
+        # AllenSDK solves exponentials analytically, which results in small discrepancies
+        output_Brian2 = glif_model.run_brian_sim(shift_stim * b2.amp, dt * b2.second, init_values, param_dict, 'exact')
+        t, %map dynamics %{ ${variable},  %} = output_Brian2
+        print("info: Brian2 simulation DONE")
+
+        # AllenSDK simulation
+        glif = GlifNeuron.from_dict(neuron_config)
+        glif.dt = dt
+        output_AllenSDK = glif.run(stim)
+%map AllenSDK_variables %{
+        ${name}_0 = output_AllenSDK${field}
+%}
+        print("info: AllenSDK simulation DONE")
+
+        return (t, %map AllenSDK_variables %{ ${value}, ${name}_0,  %})
+
+
+    # Run simulations for all sweeps
+    def sim_sweep(num, plot = False):
+        b2.set_device('cpp_standalone', directory='sweep_{}'.format(num))
+
+        data = ds.get_sweep(num)
+        result = sim_Brian2_AllenSDK(neuron_config, data)
+        t, %map AllenSDK_variables %{ ${name}, ${name}_0,  %} = result
+
+        #Compute errors where AllenSDK trace is not NaN
+        errors = []
+%map AllenSDK_variables %{
+
+        w = np.where(~np.isnan(${name}_0))
+        err = MSE(${name}_0[w], ${name}[w], squared = False)
+        errors += [err]
+        print("info: RMSE [${name}] = {}".format(err))
+%}
+
+        if plot:
+            fig = plt.figure()
+            fig.suptitle('Stimulus')
+            plt.plot(t,data['stimulus'])
+%map AllenSDK_variables %{
+            fig = plt.figure()
+            fig.suptitle($s{name})
+            plt.plot(t,${name})
+            plt.plot(t,${name}_0)
+%}
+            plt.show()
+
+        b2.device.delete(force = True)
+        b2.device.reinit()
+
+        return tuple(errors)
+
+
+    stim_nums = [x['sweep_number'] for x in ephys_sweeps if x['stimulus_units'] in ["Amps","pA"]]
+
+    sweep_start = 0
+    sweep_stop = len(stim_nums)
+    if len(sys.argv) > 5:
+        sweep_start = int(sys.argv[4])
+        if sweep_start < 0:
+            sweep_start = 0
+        sweep_stop = int(sys.argv[5])
+        if sweep_stop > len(stim_nums):
+            sweep_stop = len(stim_nums)
+
+    do_plot = False
+    if len(sys.argv) > 6:
+        do_plot = int(sys.argv[6])
+
+    # Pymp (dynamic scheduling)
+    import pymp
+    errors = pymp.shared.array((sweep_stop - sweep_start, %table-nrow(AllenSDK_variables)))
+    with pymp.Parallel() as p:
+        for i in p.xrange(0, sweep_stop - sweep_start):
+            errors[i] = sim_sweep(stim_nums[sweep_start:sweep_stop][i], do_plot)
+
+    # Multiprocessing (static scheduling)
+    #import multiprocessing
+    #pool = multiprocessing.Pool()
+    #errors = pool.map(sim_sweep, stim_nums[sweep_start:sweep_stop])
+
+    # Serial
+    #errors = np.zeros((sweep_stop - sweep_start, %table-nrow(AllenSDK_variables)))
+    #for i,num in enumerate(stim_nums[sweep_start:sweep_stop]):
+        #errors[i] = sim_sweep(num, do_plot)
+
+    result = np.hstack((np.array(stim_nums[sweep_start:sweep_stop]).reshape(-1,1),errors))
+    np.savetxt("results.txt",result,"%g")

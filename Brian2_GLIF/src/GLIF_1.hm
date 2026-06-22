@@ -1,0 +1,18 @@
+%snippet model_name %{ GLIF_1 %}
+%table parameters (name, units, decription) %{
+	El		volt		Leak reversal potential
+	C		farad		Membrane capacitance
+	G		siemens		Leak conductance
+	Th_inf	volt		Instantaneous threshold
+	t_ref	second		Refractory period
+	V_reset	volt		Reset voltage
+%}
+%table dynamics (variable, equation, units, flags) %{
+	V	dV/dt = 1 / C * (Ie(t) - G * (V - El))	volt	unless refractory
+%}
+%table reset (expression) %{
+	V = V_reset
+%}
+%table threshold (condition) %{
+	V > Th_inf
+%}

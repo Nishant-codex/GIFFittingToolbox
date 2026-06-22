@@ -1,0 +1,14 @@
+%table AllenSDK_parameters (name, value) %{
+	El		neuron_config['El']
+	C		neuron_config['coeffs']['C'] * neuron_config['C']
+	G		neuron_config['coeffs']['G'] * (1.0 / neuron_config['R_input'])
+	Th_inf	neuron_config['coeffs']['th_inf'] * neuron_config['th_inf']
+	t_ref	(neuron_config['spike_cut_length'] + 1) * dt
+	V_reset	neuron_config['init_voltage']
+%}
+%table AllenSDK_variables (name, field, value) %{
+	V	['voltage']		V
+%}
+%table AllenSDK_initial_values (variable, value) %{
+	V		neuron_config['init_voltage']
+%}

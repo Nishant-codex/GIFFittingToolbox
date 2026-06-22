@@ -1,0 +1,19 @@
+%table AllenSDK_parameters (name, value) %{
+	El		neuron_config['El']
+	C		neuron_config['coeffs']['C'] * neuron_config['C']
+	G		neuron_config['coeffs']['G'] * (1.0 / neuron_config['R_input'])
+	Th_inf	neuron_config['coeffs']['th_inf'] * neuron_config['th_inf']
+	t_ref	(neuron_config['spike_cut_length'] + 1) * dt
+	a_r		neuron_config['voltage_reset_method']['params']['a']
+	b_r		neuron_config['voltage_reset_method']['params']['b']
+	a_s		neuron_config['threshold_reset_method']['params']['a_spike']
+	b_s		neuron_config['threshold_reset_method']['params']['b_spike']
+%}
+%table AllenSDK_variables (name, field, value) %{
+	V	['voltage']		V
+	Th	['threshold']	neuron_config['coeffs']['th_inf'] * neuron_config['th_inf'] + Th_s
+%}
+%table AllenSDK_initial_values (variable, value) %{
+	V		neuron_config['init_voltage']
+	Th_s	0.0
+%}

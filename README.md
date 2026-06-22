@@ -16,6 +16,13 @@ C. Pozzorini, S. Mensi, O. Hagens, R. Naud, C. Koch and W. Gerstner, Automated h
 
 S. Mensi, O. Hagens, W. Gerstner and C. Pozzorini, Enhanced sensitivity to rapid input fluctuations by nonlinear threshold dynamics in neocortical pyramidal neurons, PLOS Computational Biology 2016
 
+The repo also contains the 5 levels of Generalized Leaky Integrate and Fire models based on: 
+
+Teeter, C., Iyer, R., Menon, V. et al. Generalized leaky integrate-and-fire models classify multiple neuron types. Nat Commun 9, 709 (2018). https://doi.org/10.1038/s41467-017-02717-4
+
+The fit is generated using BluePyOpt package optimized with Mutli-processing package for faster convergence. 
+
+Please look at Test_GLIF.py for examples. 
 
 ## Features
 - Parameter fitting for GIF models.
@@ -25,6 +32,9 @@ S. Mensi, O. Hagens, W. Gerstner and C. Pozzorini, Enhanced sensitivity to rapid
 ## Requirements
 - Python 3.x
 - Dependencies listed in `requirements.txt`.
+
+
+
 
 ## Usage
 Refer to the documentation and examples in the `src` directory for guidance on using the toolbox.
